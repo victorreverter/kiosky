@@ -1,4 +1,3 @@
-import React from "react";
 import { ExternalLink, Trash2 } from "lucide-react";
 import type { Source } from "../types";
 import { cn, getFaviconUrl } from "../lib/utils";
