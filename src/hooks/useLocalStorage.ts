@@ -1,25 +1,40 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 
-export function useLocalStorage<T>(key: string, initialValue: T) {
-  // Pass initial state function to useState so logic is only executed once
+interface UseLocalStorageReturn<T> {
+  storedValue: T;
+  setValue: (value: T | ((val: T) => T)) => void;
+  error: string | null;
+  clearError: () => void;
+}
+
+export function useLocalStorage<T>(key: string, initialValue: T): UseLocalStorageReturn<T> {
+  const [error, setError] = useState<string | null>(null);
+  
   const [storedValue, setStoredValue] = useState<T>(() => {
     if (typeof window === "undefined") {
       return initialValue;
     }
     try {
       const item = window.localStorage.getItem(key);
-      return item ? JSON.parse(item) : initialValue;
-    } catch (error) {
-      console.warn("Error reading localStorage", error);
+      if (item === null) {
+        return initialValue;
+      }
+      try {
+        return JSON.parse(item) as T;
+      } catch (parseError) {
+        console.error(`Failed to parse localStorage item "${key}":`, parseError);
+        setError("Stored data was corrupted and has been reset");
+        return initialValue;
+      }
+    } catch (readError) {
+      console.error("Error reading localStorage:", readError);
+      setError("Failed to read from storage");
       return initialValue;
     }
   });
 
-  // Return a wrapped version of useState's setter function that
-  // persists the new value to localStorage.
-  const setValue = (value: T | ((val: T) => T)) => {
+  const setValue = useCallback((value: T | ((val: T) => T)) => {
     try {
-      // Allow value to be a function so we have same API as useState
       const valueToStore =
         value instanceof Function ? value(storedValue) : value;
       
@@ -27,11 +42,23 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
       
       if (typeof window !== "undefined") {
         window.localStorage.setItem(key, JSON.stringify(valueToStore));
+        setError(null);
       }
-    } catch (error) {
-      console.warn("Error setting localStorage", error);
+    } catch (writeError) {
+      console.error("Error setting localStorage:", writeError);
+      if (writeError instanceof Error) {
+        if (writeError.name === "QuotaExceededError") {
+          setError("Storage quota exceeded. Please remove some items.");
+        } else {
+          setError("Failed to save to storage");
+        }
+      }
     }
-  };
+  }, [key, storedValue]);
 
-  return [storedValue, setValue] as const;
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
+  return { storedValue, setValue, error, clearError };
 }

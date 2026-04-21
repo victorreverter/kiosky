@@ -20,8 +20,20 @@ const THEME_ICONS = {
 } as const;
 
 function App() {
-  const [sources, setSources] = useLocalStorage<Source[]>("kiosky_sources", DEFAULT_SOURCES);
-  const [theme, setTheme] = useLocalStorage<"light" | "dark" | "system">("theme", "system");
+  const { 
+    storedValue: sources, 
+    setValue: setSources, 
+    error: sourcesError, 
+    clearError: clearSourcesError 
+  } = useLocalStorage<Source[]>("kiosky_sources", DEFAULT_SOURCES);
+  
+  const { 
+    storedValue: theme, 
+    setValue: setTheme,
+    error: themeError,
+    clearError: clearThemeError 
+  } = useLocalStorage<"light" | "dark" | "system">("theme", "system");
+  
   const [isEditMode, setIsEditMode] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   
@@ -68,10 +80,36 @@ function App() {
     setSources((prevSources) => prevSources.filter((s) => s.id !== id));
   }, [setSources]);
 
+
+
   const currentThemeIcon = useMemo(() => THEME_ICONS[theme], [theme]);
 
   return (
     <div className="min-h-screen bg-transparent p-6 md:p-12 lg:p-24 max-w-6xl mx-auto">
+      {(sourcesError || themeError) && (
+        <div className="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <ShieldAlert className="text-red-600 dark:text-red-500 mt-0.5 shrink-0" size={20} />
+            <div>
+              <h3 className="font-semibold text-red-800 dark:text-red-500">Storage Error</h3>
+              <p className="text-sm text-red-700 dark:text-red-600/90">
+                {sourcesError || themeError}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              clearSourcesError();
+              clearThemeError();
+            }}
+            className="text-red-600 dark:text-red-400 hover:underline text-sm font-medium shrink-0"
+            type="button"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       <header className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
         <div>
           <h1 className="text-4xl md:text-5xl font-black tracking-tight text-zinc-900 dark:text-white mb-2">Kiosky</h1>

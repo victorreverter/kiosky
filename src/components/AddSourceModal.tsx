@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { X } from "lucide-react";
-import { generateId } from "../lib/utils";
+import { X, AlertCircle } from "lucide-react";
+import { generateId, isValidHttpUrl, cn } from "../lib/utils";
 import type { Source } from "../types";
 
 interface AddSourceModalProps {
@@ -11,6 +11,7 @@ interface AddSourceModalProps {
 export function AddSourceModal({ onClose, onAdd }: AddSourceModalProps) {
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
+  const [urlError, setUrlError] = useState<string | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -76,18 +77,31 @@ export function AddSourceModal({ onClose, onAdd }: AddSourceModalProps) {
     e.preventDefault();
     if (!name.trim() || !url.trim()) return;
 
-    // Basic URL validation/fixing
     let finalUrl = url.trim();
     if (!finalUrl.startsWith("http://") && !finalUrl.startsWith("https://")) {
       finalUrl = "https://" + finalUrl;
     }
 
+    if (!isValidHttpUrl(finalUrl)) {
+      setUrlError("Please enter a valid URL (e.g., https://example.com)");
+      return;
+    }
+
+    setUrlError(null);
     onAdd({
       id: generateId(),
       name: name.trim(),
       url: finalUrl,
       addedAt: Date.now(),
     });
+  };
+
+  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setUrl(value);
+    if (urlError) {
+      setUrlError(null);
+    }
   };
 
   return (
@@ -140,11 +154,24 @@ export function AddSourceModal({ onClose, onAdd }: AddSourceModalProps) {
               id="url"
               type="text"
               value={url}
-              onChange={(e) => setUrl(e.target.value)}
+              onChange={handleUrlChange}
               placeholder="e.g. news.ycombinator.com"
-              className="w-full px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:text-zinc-100 transition-shadow transition-colors placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
+              className={cn(
+                "w-full px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-950 border focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:text-zinc-100 transition-shadow transition-colors placeholder:text-zinc-400 dark:placeholder:text-zinc-600",
+                urlError 
+                  ? "border-red-300 dark:border-red-700 focus:ring-red-500/50" 
+                  : "border-zinc-200 dark:border-zinc-800"
+              )}
               required
+              aria-invalid={urlError ? "true" : "false"}
+              aria-describedby={urlError ? "url-error" : undefined}
             />
+            {urlError && (
+              <div id="url-error" className="mt-2 flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
+                <AlertCircle size={16} />
+                <span>{urlError}</span>
+              </div>
+            )}
           </div>
 
           <div className="pt-4 flex justify-end gap-3">
