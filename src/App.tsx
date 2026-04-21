@@ -4,7 +4,7 @@ import { useLocalStorage } from "./hooks/useLocalStorage";
 import type { Source } from "./types";
 import { KioskCard } from "./components/KioskCard";
 import { AddSourceModal } from "./components/AddSourceModal";
-import { cn } from "./lib/utils";
+import { cn, isValidHttpUrl } from "./lib/utils";
 
 const DEFAULT_SOURCES: Source[] = [
   { id: "1", name: "NY Times", url: "https://nytimes.com", addedAt: Date.now() },
@@ -72,13 +72,21 @@ function App() {
   }, [theme, setTheme]);
 
   const handleAddSource = useCallback((source: Source) => {
+    if (!isValidHttpUrl(source.url)) {
+      console.error("Attempted to add invalid URL:", source.url);
+      return;
+    }
     setSources((prevSources) => [...prevSources, source]);
     setIsAddModalOpen(false);
   }, [setSources]);
 
   const handleDeleteSource = useCallback((id: string) => {
+    const sourceToDelete = sources.find(s => s.id === id);
+    if (sourceToDelete && !window.confirm(`Delete "${sourceToDelete.name}"?`)) {
+      return;
+    }
     setSources((prevSources) => prevSources.filter((s) => s.id !== id));
-  }, [setSources]);
+  }, [setSources, sources]);
 
 
 
@@ -87,7 +95,11 @@ function App() {
   return (
     <div className="min-h-screen bg-transparent p-6 md:p-12 lg:p-24 max-w-6xl mx-auto">
       {(sourcesError || themeError) && (
-        <div className="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 flex items-start justify-between gap-3">
+        <div 
+          className="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 flex items-start justify-between gap-3"
+          role="alert"
+          aria-live="polite"
+        >
           <div className="flex items-start gap-3">
             <ShieldAlert className="text-red-600 dark:text-red-500 mt-0.5 shrink-0" size={20} />
             <div>
@@ -144,7 +156,11 @@ function App() {
 
       <main>
         {isEditMode && (
-          <div className="mb-8 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 flex items-start gap-3">
+          <div 
+            className="mb-8 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 flex items-start gap-3"
+            role="status"
+            aria-live="polite"
+          >
             <ShieldAlert className="text-amber-600 dark:text-amber-500 mt-0.5 shrink-0" size={20} />
             <div>
               <h3 className="font-semibold text-amber-800 dark:text-amber-500">Edit Mode Active</h3>
@@ -167,13 +183,19 @@ function App() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
-            {sources.map((source) => (
+          <div 
+            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6" 
+            role="list"
+            aria-label="News sources"
+          >
+            {sources.map((source, index) => (
               <KioskCard
                 key={source.id}
                 source={source}
                 isEditMode={isEditMode}
                 onDelete={handleDeleteSource}
+                index={index}
+                totalItems={sources.length}
               />
             ))}
             
@@ -183,6 +205,7 @@ function App() {
                 className="flex flex-col items-center justify-center rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border-2 border-dashed border-zinc-200 dark:border-zinc-800 h-[154px] hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors group"
                 aria-label="Add new source"
                 type="button"
+                role="listitem"
               >
                 <div className="w-12 h-12 mb-2 flex items-center justify-center rounded-xl bg-zinc-200/50 dark:bg-zinc-800 text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors">
                   <Plus size={24} />

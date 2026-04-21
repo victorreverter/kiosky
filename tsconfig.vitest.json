@@ -1,9 +1,8 @@
 {
   "compilerOptions": {
-    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
-    "target": "ES2020",
-    "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.vitest.tsbuildinfo",
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM"],
     "module": "ESNext",
     "skipLibCheck": true,
 
@@ -15,15 +14,15 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
+    /* Testing */
+    "types": ["vitest/globals", "@testing-library/jest-dom"],
+    
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true,
-    
-    /* Testing */
-    "types": ["vitest/globals", "@testing-library/jest-dom"]
+    "noUncheckedSideEffectImports": true
   },
-  "include": ["src", "src/**/*.css"]
+  "include": ["vitest.config.ts", "src/test"]
 }

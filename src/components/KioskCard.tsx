@@ -1,4 +1,4 @@
-import { memo, useCallback } from "react";
+import { memo, useCallback, useState } from "react";
 import { ExternalLink, Trash2 } from "lucide-react";
 import type { Source } from "../types";
 import { cn, getFaviconUrl, isValidHttpUrl } from "../lib/utils";
@@ -7,10 +7,13 @@ interface KioskCardProps {
   source: Source;
   isEditMode: boolean;
   onDelete: (id: string) => void;
+  index?: number;
+  totalItems?: number;
 }
 
-export const KioskCard = memo(function KioskCard({ source, isEditMode, onDelete }: KioskCardProps) {
+export const KioskCard = memo(function KioskCard({ source, isEditMode, onDelete, index = 0, totalItems = 0 }: KioskCardProps) {
   const faviconUrl = getFaviconUrl(source.url);
+  const [faviconFailed, setFaviconFailed] = useState(false);
 
   const handleClick = useCallback(() => {
     if (isEditMode) return;
@@ -29,6 +32,41 @@ export const KioskCard = memo(function KioskCard({ source, isEditMode, onDelete 
       handleClick();
     }
   }, [handleClick]);
+
+  const handleGridNavigation = useCallback((e: React.KeyboardEvent) => {
+    if (isEditMode) return;
+    
+    const grid = e.currentTarget.parentElement;
+    if (!grid) return;
+    
+    const cards = Array.from(grid.querySelectorAll('[role="link"]'));
+    const currentIndex = cards.indexOf(e.currentTarget);
+    
+    let nextIndex: number | null = null;
+    
+    switch (e.key) {
+      case "ArrowRight":
+        nextIndex = (currentIndex + 1) % cards.length;
+        break;
+      case "ArrowLeft":
+        nextIndex = (currentIndex - 1 + cards.length) % cards.length;
+        break;
+      case "ArrowDown":
+        nextIndex = currentIndex + 2;
+        if (nextIndex >= cards.length) nextIndex = currentIndex;
+        break;
+      case "ArrowUp":
+        nextIndex = currentIndex - 2;
+        if (nextIndex < 0) nextIndex = Math.max(0, cards.length - 1);
+        break;
+    }
+    
+    if (nextIndex !== null && nextIndex !== currentIndex) {
+      e.preventDefault();
+      const nextCard = cards[nextIndex] as HTMLElement;
+      nextCard?.focus();
+    }
+  }, [isEditMode]);
   
   return (
     <div
@@ -37,10 +75,15 @@ export const KioskCard = memo(function KioskCard({ source, isEditMode, onDelete 
         isEditMode ? "animate-pulse-subtle cursor-default" : "cursor-pointer"
       )}
       onClick={handleClick}
-      onKeyDown={handleKeyDown}
+      onKeyDown={(e) => {
+        handleKeyDown(e);
+        handleGridNavigation(e);
+      }}
       role={isEditMode ? undefined : "link"}
       tabIndex={isEditMode ? -1 : 0}
       aria-label={isEditMode ? undefined : `Open ${source.name}`}
+      aria-posinset={index !== undefined ? index + 1 : undefined}
+      aria-setsize={totalItems}
     >
       {/* Delete button in edit mode */}
       {isEditMode && (
@@ -65,18 +108,16 @@ export const KioskCard = memo(function KioskCard({ source, isEditMode, onDelete 
       )}
 
       <div className="w-16 h-16 mb-4 flex items-center justify-center rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700/50 shadow-inner overflow-hidden">
-        {faviconUrl ? (
+        {faviconUrl && !faviconFailed ? (
           <img
             src={faviconUrl}
             alt={`${source.name} icon`}
             className="w-10 h-10 object-contain drop-shadow-sm"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = 'none';
-              (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
-            }}
+            onError={() => setFaviconFailed(true)}
+            loading="lazy"
           />
         ) : null}
-        <div className={cn("text-2xl font-semibold text-zinc-400 dark:text-zinc-500 uppercase", faviconUrl ? "hidden" : "block")}>
+        <div className={cn("text-2xl font-semibold text-zinc-400 dark:text-zinc-500 uppercase", (!faviconUrl || faviconFailed) ? "block" : "hidden")}>
           {source.name.charAt(0)}
         </div>
       </div>

@@ -104,6 +104,10 @@ export function AddSourceModal({ onClose, onAdd }: AddSourceModalProps) {
     }
   };
 
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setName(e.target.value);
+  };
+
   return (
     <div 
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/50 backdrop-blur-sm animate-in fade-in duration-200"
@@ -139,10 +143,11 @@ export function AddSourceModal({ onClose, onAdd }: AddSourceModalProps) {
               id="name"
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={handleNameChange}
               placeholder="e.g. Hacker News"
               className="w-full px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:text-zinc-100 transition-shadow transition-colors placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
               required
+              autoComplete="off"
             />
           </div>
 
@@ -152,10 +157,11 @@ export function AddSourceModal({ onClose, onAdd }: AddSourceModalProps) {
             </label>
             <input
               id="url"
-              type="text"
+              type="url"
+              inputMode="url"
               value={url}
               onChange={handleUrlChange}
-              placeholder="e.g. news.ycombinator.com"
+              placeholder="e.g. https://news.ycombinator.com"
               className={cn(
                 "w-full px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-950 border focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:text-zinc-100 transition-shadow transition-colors placeholder:text-zinc-400 dark:placeholder:text-zinc-600",
                 urlError 
@@ -163,6 +169,7 @@ export function AddSourceModal({ onClose, onAdd }: AddSourceModalProps) {
                   : "border-zinc-200 dark:border-zinc-800"
               )}
               required
+              autoComplete="off"
               aria-invalid={urlError ? "true" : "false"}
               aria-describedby={urlError ? "url-error" : undefined}
             />

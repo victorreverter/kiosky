@@ -15,9 +15,15 @@ export function getFaviconUrl(url: string) {
   }
 }
 
-// Generate a random ID
-export function generateId() {
-  return Math.random().toString(36).substring(2, 9);
+/**
+ * Generates a unique ID using crypto.randomUUID() if available,
+ * otherwise falls back to Math.random()
+ */
+export function generateId(): string {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
 }
 
 /**
