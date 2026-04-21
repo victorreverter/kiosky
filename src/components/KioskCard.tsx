@@ -1,6 +1,6 @@
 import { ExternalLink, Trash2 } from "lucide-react";
 import type { Source } from "../types";
-import { cn, getFaviconUrl } from "../lib/utils";
+import { cn, getFaviconUrl, isValidHttpUrl } from "../lib/utils";
 
 interface KioskCardProps {
   source: Source;
@@ -11,8 +11,24 @@ interface KioskCardProps {
 export function KioskCard({ source, isEditMode, onDelete }: KioskCardProps) {
   const faviconUrl = getFaviconUrl(source.url);
 
-  // Parse the URL to show something clean if needed, 
-  // but we prefer showing the provided name.
+  const handleClick = () => {
+    if (isEditMode) return;
+    
+    // Security: Validate URL before opening to prevent javascript: URLs
+    if (!isValidHttpUrl(source.url)) {
+      console.warn("Invalid URL prevented from opening:", source.url);
+      return;
+    }
+    
+    window.open(source.url, "_blank", "noopener,noreferrer");
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleClick();
+    }
+  };
   
   return (
     <div
@@ -20,11 +36,11 @@ export function KioskCard({ source, isEditMode, onDelete }: KioskCardProps) {
         "group relative flex flex-col items-center justify-center rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden",
         isEditMode ? "animate-pulse-subtle cursor-default" : "cursor-pointer"
       )}
-      onClick={() => {
-        if (!isEditMode) {
-          window.open(source.url, "_blank", "noopener,noreferrer");
-        }
-      }}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      role={isEditMode ? undefined : "link"}
+      tabIndex={isEditMode ? -1 : 0}
+      aria-label={isEditMode ? undefined : `Open ${source.name}`}
     >
       {/* Delete button in edit mode */}
       {isEditMode && (
