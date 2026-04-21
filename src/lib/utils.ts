@@ -9,9 +9,8 @@ export function cn(...inputs: ClassValue[]) {
 export function getFaviconUrl(url: string) {
   try {
     const domain = new URL(url).hostname;
-    // Using Google's favicon service which is reliable and free
     return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
-  } catch (error) {
+  } catch {
     return null;
   }
 }

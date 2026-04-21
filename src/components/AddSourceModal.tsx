@@ -156,8 +156,10 @@ export function AddSourceModal({ onClose, onAdd }: AddSourceModalProps) {
               Cancel
             </button>
             <button
-              type="submit"
-              className="px-5 py-2.5 text-sm font-medium text-white bg-zinc-900 dark:bg-white dark:text-zinc-900 rounded-xl hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors shadow-sm"
+              type="button"
+              onClick={handleSubmit}
+              disabled={!name.trim() || !url.trim()}
+              className="px-5 py-2.5 text-sm font-medium text-white bg-zinc-900 dark:bg-white dark:text-zinc-900 rounded-xl hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Add Source
             </button>

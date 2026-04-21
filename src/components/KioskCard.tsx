@@ -1,3 +1,4 @@
+import { memo, useCallback } from "react";
 import { ExternalLink, Trash2 } from "lucide-react";
 import type { Source } from "../types";
 import { cn, getFaviconUrl, isValidHttpUrl } from "../lib/utils";
@@ -8,27 +9,26 @@ interface KioskCardProps {
   onDelete: (id: string) => void;
 }
 
-export function KioskCard({ source, isEditMode, onDelete }: KioskCardProps) {
+export const KioskCard = memo(function KioskCard({ source, isEditMode, onDelete }: KioskCardProps) {
   const faviconUrl = getFaviconUrl(source.url);
 
-  const handleClick = () => {
+  const handleClick = useCallback(() => {
     if (isEditMode) return;
     
-    // Security: Validate URL before opening to prevent javascript: URLs
     if (!isValidHttpUrl(source.url)) {
       console.warn("Invalid URL prevented from opening:", source.url);
       return;
     }
     
     window.open(source.url, "_blank", "noopener,noreferrer");
-  };
+  }, [isEditMode, source.url]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       handleClick();
     }
-  };
+  }, [handleClick]);
   
   return (
     <div
@@ -51,6 +51,7 @@ export function KioskCard({ source, isEditMode, onDelete }: KioskCardProps) {
           }}
           className="absolute top-2 right-2 p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors z-10"
           aria-label={`Delete ${source.name}`}
+          type="button"
         >
           <Trash2 size={16} />
         </button>
@@ -85,4 +86,4 @@ export function KioskCard({ source, isEditMode, onDelete }: KioskCardProps) {
       </h3>
     </div>
   );
-}
+});

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Plus, Settings2, Moon, Sun, Monitor, ShieldAlert } from "lucide-react";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import type { Source } from "./types";
@@ -12,6 +12,12 @@ const DEFAULT_SOURCES: Source[] = [
   { id: "3", name: "Hacker News", url: "https://news.ycombinator.com", addedAt: Date.now() },
   { id: "4", name: "TechCrunch", url: "https://techcrunch.com", addedAt: Date.now() },
 ];
+
+const THEME_ICONS = {
+  light: <Sun size={20} />,
+  dark: <Moon size={20} />,
+  system: <Monitor size={20} />,
+} as const;
 
 function App() {
   const [sources, setSources] = useLocalStorage<Source[]>("kiosky_sources", DEFAULT_SOURCES);
@@ -47,22 +53,22 @@ function App() {
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, [theme]);
 
-  const toggleTheme = () => {
+  const toggleTheme = useCallback(() => {
     if (theme === "light") setTheme("dark");
     else if (theme === "dark") setTheme("system");
     else setTheme("light");
-  };
+  }, [theme, setTheme]);
 
-  const handleAddSource = (source: Source) => {
-    setSources([...sources, source]);
+  const handleAddSource = useCallback((source: Source) => {
+    setSources((prevSources) => [...prevSources, source]);
     setIsAddModalOpen(false);
-  };
+  }, [setSources]);
 
-  const handleDeleteSource = (id: string) => {
-    setSources(sources.filter((s) => s.id !== id));
-  };
+  const handleDeleteSource = useCallback((id: string) => {
+    setSources((prevSources) => prevSources.filter((s) => s.id !== id));
+  }, [setSources]);
 
-  const currentThemeIcon = theme === "light" ? <Sun size={20} /> : theme === "dark" ? <Moon size={20} /> : <Monitor size={20} />;
+  const currentThemeIcon = useMemo(() => THEME_ICONS[theme], [theme]);
 
   return (
     <div className="min-h-screen bg-transparent p-6 md:p-12 lg:p-24 max-w-6xl mx-auto">
@@ -76,7 +82,8 @@ function App() {
           <button
             onClick={toggleTheme}
             className="p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-full shadow-sm hover:shadow-md hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all text-zinc-600 dark:text-zinc-300"
-            aria-label="Toggle theme"
+            aria-label={`Toggle theme (current: ${theme})`}
+            type="button"
           >
             {currentThemeIcon}
           </button>
@@ -89,6 +96,7 @@ function App() {
                 ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800" 
                 : "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800"
             )}
+            type="button"
           >
             <Settings2 size={20} className={cn(isEditMode && "animate-spin-slow")} />
             {isEditMode ? "Done Editing" : "Edit Mode"}
@@ -115,6 +123,7 @@ function App() {
             <button
               onClick={() => setIsEditMode(true)}
               className="text-blue-600 dark:text-blue-400 font-medium hover:underline"
+              type="button"
             >
               Enter Edit Mode to add sources
             </button>
@@ -135,6 +144,7 @@ function App() {
                 onClick={() => setIsAddModalOpen(true)}
                 className="flex flex-col items-center justify-center rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border-2 border-dashed border-zinc-200 dark:border-zinc-800 h-[154px] hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors group"
                 aria-label="Add new source"
+                type="button"
               >
                 <div className="w-12 h-12 mb-2 flex items-center justify-center rounded-xl bg-zinc-200/50 dark:bg-zinc-800 text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors">
                   <Plus size={24} />
