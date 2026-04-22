@@ -221,4 +221,78 @@ describe('AddSourceModal', () => {
     
     expect(mockOnAdd).toHaveBeenCalledTimes(1);
   });
+
+  it('should render edit modal with existing data', () => {
+    const editSource = { 
+      id: '1', 
+      name: 'Existing Site', 
+      url: 'https://existing.com', 
+      addedAt: Date.now() 
+    };
+    
+    render(
+      <AddSourceModal 
+        onClose={mockOnClose} 
+        onEdit={mockOnAdd}
+        editSource={editSource}
+        existingSources={[]}
+      />
+    );
+    
+    expect(screen.getByText('Edit Source')).toBeInTheDocument();
+    expect(screen.getByLabelText('Site Name')).toHaveValue('Existing Site');
+    expect(screen.getByLabelText('URL')).toHaveValue('https://existing.com');
+  });
+
+  it('should call onEdit instead of onAdd when editing', async () => {
+    const user = userEvent.setup();
+    const editSource = { 
+      id: '1', 
+      name: 'Existing Site', 
+      url: 'https://existing.com', 
+      addedAt: Date.now() 
+    };
+    const mockOnEdit = vi.fn();
+    
+    render(
+      <AddSourceModal 
+        onClose={mockOnClose} 
+        onAdd={mockOnAdd}
+        onEdit={mockOnEdit}
+        editSource={editSource}
+        existingSources={[]}
+      />
+    );
+    
+    await user.clear(screen.getByLabelText('Site Name'));
+    await user.type(screen.getByLabelText('Site Name'), 'Updated Site');
+    fireEvent.submit(screen.getByRole('button', { name: 'Save Changes' }));
+    
+    expect(mockOnEdit).toHaveBeenCalledTimes(1);
+    expect(mockOnAdd).not.toHaveBeenCalled();
+  });
+
+  it('should allow editing same URL without duplicate error', async () => {
+    const editSource = { 
+      id: '1', 
+      name: 'Example', 
+      url: 'https://example.com', 
+      addedAt: Date.now() 
+    };
+    const existingSources = [editSource];
+    const mockOnEdit = vi.fn();
+    
+    render(
+      <AddSourceModal 
+        onClose={mockOnClose} 
+        onEdit={mockOnEdit}
+        editSource={editSource}
+        existingSources={existingSources}
+      />
+    );
+    
+    fireEvent.submit(screen.getByRole('button', { name: 'Save Changes' }));
+    
+    expect(mockOnEdit).toHaveBeenCalledTimes(1);
+  });
 });

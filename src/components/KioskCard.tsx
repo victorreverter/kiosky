@@ -1,5 +1,5 @@
 import { memo, useCallback, useState, useEffect } from "react";
-import { ExternalLink, Trash2 } from "lucide-react";
+import { ExternalLink, Trash2, Edit2 } from "lucide-react";
 import type { Source } from "../types";
 import { cn, getFaviconUrl, isValidHttpUrl } from "../lib/utils";
 
@@ -7,6 +7,7 @@ interface KioskCardProps {
   source: Source;
   isEditMode: boolean;
   onDelete: (id: string) => void;
+  onEdit?: (source: Source) => void;
   index?: number;
   totalItems?: number;
 }
@@ -27,7 +28,7 @@ function getCurrentColumns(): number {
   return 2;
 }
 
-export const KioskCard = memo(function KioskCard({ source, isEditMode, onDelete, index = 0, totalItems = 0 }: KioskCardProps) {
+export const KioskCard = memo(function KioskCard({ source, isEditMode, onDelete, onEdit, index = 0, totalItems = 0 }: KioskCardProps) {
   const faviconUrl = getFaviconUrl(source.url);
   const [faviconFailed, setFaviconFailed] = useState(false);
   const [currentColumns, setCurrentColumns] = useState(getCurrentColumns());
@@ -115,19 +116,32 @@ export const KioskCard = memo(function KioskCard({ source, isEditMode, onDelete,
       aria-posinset={index !== undefined ? index + 1 : undefined}
       aria-setsize={totalItems}
     >
-      {/* Delete button in edit mode */}
+      {/* Edit and Delete buttons in edit mode */}
       {isEditMode && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(source.id);
-          }}
-          className="absolute top-2 right-2 p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors z-10"
-          aria-label={`Delete ${source.name}`}
-          type="button"
-        >
-          <Trash2 size={16} />
-        </button>
+        <>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit?.(source);
+            }}
+            className="absolute top-2 right-10 p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors z-10"
+            aria-label={`Edit ${source.name}`}
+            type="button"
+          >
+            <Edit2 size={16} />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(source.id);
+            }}
+            className="absolute top-2 right-2 p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors z-10"
+            aria-label={`Delete ${source.name}`}
+            type="button"
+          >
+            <Trash2 size={16} />
+          </button>
+        </>
       )}
 
       {/* External link indicator */}

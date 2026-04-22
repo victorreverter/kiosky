@@ -36,6 +36,7 @@ function App() {
   
   const [isEditMode, setIsEditMode] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingSource, setEditingSource] = useState<Source | null>(null);
   
   // Apply theme class
   useEffect(() => {
@@ -87,6 +88,18 @@ function App() {
     }
     setSources((prevSources) => prevSources.filter((s) => s.id !== id));
   }, [setSources, sources]);
+
+  const handleEditSource = useCallback((source: Source) => {
+    setEditingSource(source);
+    setIsEditMode(false);
+  }, []);
+
+  const handleUpdateSource = useCallback((updatedSource: Source) => {
+    setSources((prevSources) => 
+      prevSources.map((s) => (s.id === updatedSource.id ? updatedSource : s))
+    );
+    setEditingSource(null);
+  }, [setSources]);
 
 
 
@@ -194,6 +207,7 @@ function App() {
                 source={source}
                 isEditMode={isEditMode}
                 onDelete={handleDeleteSource}
+                onEdit={handleEditSource}
                 index={index}
                 totalItems={sources.length}
               />
@@ -223,6 +237,15 @@ function App() {
         <AddSourceModal
           onClose={() => setIsAddModalOpen(false)}
           onAdd={handleAddSource}
+          existingSources={sources}
+        />
+      )}
+
+      {editingSource && (
+        <AddSourceModal
+          onClose={() => setEditingSource(null)}
+          onEdit={handleUpdateSource}
+          editSource={editingSource}
           existingSources={sources}
         />
       )}

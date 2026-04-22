@@ -5,8 +5,10 @@ import type { Source } from "../types";
 
 interface AddSourceModalProps {
   onClose: () => void;
-  onAdd: (source: Source) => void;
+  onAdd?: (source: Source) => void;
+  onEdit?: (source: Source) => void;
   existingSources?: Source[];
+  editSource?: Source | null;
 }
 
 const MAX_NAME_LENGTH = 50;
@@ -24,9 +26,9 @@ function normalizeUrl(url: string): string {
   }
 }
 
-export function AddSourceModal({ onClose, onAdd, existingSources = [] }: AddSourceModalProps) {
-  const [name, setName] = useState("");
-  const [url, setUrl] = useState("");
+export function AddSourceModal({ onClose, onAdd, onEdit, existingSources = [], editSource = null }: AddSourceModalProps) {
+  const [name, setName] = useState(editSource?.name ?? "");
+  const [url, setUrl] = useState(editSource?.url ?? "");
   const [urlError, setUrlError] = useState<string | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -121,7 +123,7 @@ export function AddSourceModal({ onClose, onAdd, existingSources = [] }: AddSour
 
     const normalizedUrl = normalizeUrl(finalUrl);
     const isDuplicate = existingSources.some(
-      source => normalizeUrl(source.url) === normalizedUrl
+      source => source.id !== editSource?.id && normalizeUrl(source.url) === normalizedUrl
     );
 
     if (isDuplicate) {
@@ -130,12 +132,21 @@ export function AddSourceModal({ onClose, onAdd, existingSources = [] }: AddSour
     }
 
     setUrlError(null);
-    onAdd({
-      id: generateId(),
-      name: name.trim(),
-      url: finalUrl,
-      addedAt: Date.now(),
-    });
+    
+    if (editSource && onEdit) {
+      onEdit({
+        ...editSource,
+        name: name.trim(),
+        url: finalUrl,
+      });
+    } else if (onAdd) {
+      onAdd({
+        id: generateId(),
+        name: name.trim(),
+        url: finalUrl,
+        addedAt: Date.now(),
+      });
+    }
   };
 
   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -169,7 +180,9 @@ export function AddSourceModal({ onClose, onAdd, existingSources = [] }: AddSour
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between p-6 border-b border-zinc-100 dark:border-zinc-800">
-          <h2 id="modal-title" className="text-xl font-semibold text-zinc-800 dark:text-zinc-100">Add New Source</h2>
+          <h2 id="modal-title" className="text-xl font-semibold text-zinc-800 dark:text-zinc-100">
+            {editSource ? "Edit Source" : "Add New Source"}
+          </h2>
           <button 
             ref={closeButtonRef}
             onClick={onClose}
@@ -249,7 +262,7 @@ export function AddSourceModal({ onClose, onAdd, existingSources = [] }: AddSour
               disabled={!name.trim() || !url.trim()}
               className="px-5 py-2.5 text-sm font-medium text-white bg-zinc-900 dark:bg-white dark:text-zinc-900 rounded-xl hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Add Source
+              {editSource ? "Save Changes" : "Add Source"}
             </button>
           </div>
         </form>
