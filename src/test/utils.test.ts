@@ -36,6 +36,17 @@ describe('isValidHttpUrl', () => {
     expect(isValidHttpUrl('https://javascript:alert(1)')).toBe(false);
     expect(isValidHttpUrl('https://example.com?redirect=data:text/html,<h1>Test</h1>')).toBe(false);
   });
+
+  it('should return false for homograph attack URLs with mixed scripts', () => {
+    expect(isValidHttpUrl('https://раypal.com')).toBe(false);
+    expect(isValidHttpUrl('https://еxample.com')).toBe(false);
+    expect(isValidHttpUrl('https://example.cοm')).toBe(false);
+  });
+
+  it('should return true for legitimate internationalized domain names', () => {
+    expect(isValidHttpUrl('https://münchen.de')).toBe(true);
+    expect(isValidHttpUrl('https://пример.рф')).toBe(true);
+  });
 });
 
 describe('generateId', () => {
