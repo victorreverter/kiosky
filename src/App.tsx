@@ -223,6 +223,7 @@ function App() {
         <AddSourceModal
           onClose={() => setIsAddModalOpen(false)}
           onAdd={handleAddSource}
+          existingSources={sources}
         />
       )}
     </div>

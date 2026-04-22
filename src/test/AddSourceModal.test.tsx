@@ -136,4 +136,89 @@ describe('AddSourceModal', () => {
     
     expect(screen.getByText('11/500')).toBeInTheDocument();
   });
+
+  it('should prevent adding duplicate URLs', async () => {
+    const user = userEvent.setup();
+    const existingSources = [
+      { id: '1', name: 'Example', url: 'https://example.com', addedAt: Date.now() },
+    ];
+    
+    render(
+      <AddSourceModal 
+        onClose={mockOnClose} 
+        onAdd={mockOnAdd} 
+        existingSources={existingSources} 
+      />
+    );
+    
+    await user.type(screen.getByLabelText('Site Name'), 'Test');
+    await user.type(screen.getByLabelText('URL'), 'example.com');
+    fireEvent.submit(screen.getByRole('button', { name: 'Add Source' }));
+    
+    expect(screen.getByText('This source has already been added')).toBeInTheDocument();
+    expect(mockOnAdd).not.toHaveBeenCalled();
+  });
+
+  it('should detect duplicate URLs with different protocols', async () => {
+    const user = userEvent.setup();
+    const existingSources = [
+      { id: '1', name: 'Example', url: 'https://example.com', addedAt: Date.now() },
+    ];
+    
+    render(
+      <AddSourceModal 
+        onClose={mockOnClose} 
+        onAdd={mockOnAdd} 
+        existingSources={existingSources} 
+      />
+    );
+    
+    await user.type(screen.getByLabelText('Site Name'), 'Test');
+    await user.type(screen.getByLabelText('URL'), 'http://example.com');
+    fireEvent.submit(screen.getByRole('button', { name: 'Add Source' }));
+    
+    expect(mockOnAdd).not.toHaveBeenCalled();
+  });
+
+  it('should detect duplicate URLs with trailing slash', async () => {
+    const user = userEvent.setup();
+    const existingSources = [
+      { id: '1', name: 'Example', url: 'https://example.com', addedAt: Date.now() },
+    ];
+    
+    render(
+      <AddSourceModal 
+        onClose={mockOnClose} 
+        onAdd={mockOnAdd} 
+        existingSources={existingSources} 
+      />
+    );
+    
+    await user.type(screen.getByLabelText('Site Name'), 'Test');
+    await user.type(screen.getByLabelText('URL'), 'https://example.com/');
+    fireEvent.submit(screen.getByRole('button', { name: 'Add Source' }));
+    
+    expect(mockOnAdd).not.toHaveBeenCalled();
+  });
+
+  it('should allow adding URLs with different paths', async () => {
+    const user = userEvent.setup();
+    const existingSources = [
+      { id: '1', name: 'Example', url: 'https://example.com/news', addedAt: Date.now() },
+    ];
+    
+    render(
+      <AddSourceModal 
+        onClose={mockOnClose} 
+        onAdd={mockOnAdd} 
+        existingSources={existingSources} 
+      />
+    );
+    
+    await user.type(screen.getByLabelText('Site Name'), 'Test');
+    await user.type(screen.getByLabelText('URL'), 'https://example.com/sports');
+    fireEvent.submit(screen.getByRole('button', { name: 'Add Source' }));
+    
+    expect(mockOnAdd).toHaveBeenCalledTimes(1);
+  });
 });

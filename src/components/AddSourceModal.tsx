@@ -6,12 +6,25 @@ import type { Source } from "../types";
 interface AddSourceModalProps {
   onClose: () => void;
   onAdd: (source: Source) => void;
+  existingSources?: Source[];
 }
 
 const MAX_NAME_LENGTH = 50;
 const MAX_URL_LENGTH = 500;
 
-export function AddSourceModal({ onClose, onAdd }: AddSourceModalProps) {
+function normalizeUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname.toLowerCase();
+    const pathname = parsed.pathname === '/' ? '' : parsed.pathname;
+    const search = parsed.search;
+    return `https://${hostname}${pathname}${search}`;
+  } catch {
+    return url.toLowerCase();
+  }
+}
+
+export function AddSourceModal({ onClose, onAdd, existingSources = [] }: AddSourceModalProps) {
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [urlError, setUrlError] = useState<string | null>(null);
@@ -103,6 +116,16 @@ export function AddSourceModal({ onClose, onAdd }: AddSourceModalProps) {
     const dangerousProtocols = ["javascript:", "data:", "vbscript:", "file:"];
     if (dangerousProtocols.some(protocol => finalUrl.toLowerCase().includes(protocol))) {
       setUrlError("This URL contains unsafe protocols");
+      return;
+    }
+
+    const normalizedUrl = normalizeUrl(finalUrl);
+    const isDuplicate = existingSources.some(
+      source => normalizeUrl(source.url) === normalizedUrl
+    );
+
+    if (isDuplicate) {
+      setUrlError("This source has already been added");
       return;
     }
 
