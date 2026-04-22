@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AddSourceModal } from '../components/AddSourceModal';
+import { fireEvent } from '@testing-library/react';
 
 describe('AddSourceModal', () => {
   const mockOnClose = vi.fn();
@@ -64,7 +65,7 @@ describe('AddSourceModal', () => {
     
     await user.type(screen.getByLabelText('Site Name'), 'Test Site');
     await user.type(screen.getByLabelText('URL'), 'example.com');
-    await user.click(screen.getByText('Add Source'));
+    fireEvent.submit(screen.getByRole('button', { name: 'Add Source' }));
     
     expect(mockOnAdd).toHaveBeenCalledTimes(1);
     expect(mockOnAdd).toHaveBeenCalledWith(expect.objectContaining({
@@ -81,7 +82,7 @@ describe('AddSourceModal', () => {
     
     await user.type(screen.getByLabelText('Site Name'), 'Test');
     await user.type(screen.getByLabelText('URL'), 'example.com');
-    await user.click(screen.getByText('Add Source'));
+    fireEvent.submit(screen.getByRole('button', { name: 'Add Source' }));
     
     expect(mockOnAdd).toHaveBeenCalledWith(expect.objectContaining({
       url: 'https://example.com',
