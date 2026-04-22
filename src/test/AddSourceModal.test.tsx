@@ -88,4 +88,52 @@ describe('AddSourceModal', () => {
       url: 'https://example.com',
     }));
   });
+
+  it('should enforce character limit on name field', async () => {
+    const user = userEvent.setup();
+    render(
+      <AddSourceModal onClose={mockOnClose} onAdd={mockOnAdd} />
+    );
+    
+    const longName = 'A'.repeat(60);
+    await user.type(screen.getByLabelText('Site Name'), longName);
+    
+    const nameInput = screen.getByLabelText('Site Name') as HTMLInputElement;
+    expect(nameInput.value.length).toBeLessThanOrEqual(50);
+  });
+
+  it('should enforce character limit on URL field', async () => {
+    const user = userEvent.setup();
+    render(
+      <AddSourceModal onClose={mockOnClose} onAdd={mockOnAdd} />
+    );
+    
+    const longUrl = 'https://' + 'example.com/'.repeat(50);
+    await user.type(screen.getByLabelText('URL'), longUrl);
+    
+    const urlInput = screen.getByLabelText('URL') as HTMLInputElement;
+    expect(urlInput.value.length).toBeLessThanOrEqual(500);
+  });
+
+  it('should show character count for name field', async () => {
+    const user = userEvent.setup();
+    render(
+      <AddSourceModal onClose={mockOnClose} onAdd={mockOnAdd} />
+    );
+    
+    await user.type(screen.getByLabelText('Site Name'), 'Test');
+    
+    expect(screen.getByText('4/50')).toBeInTheDocument();
+  });
+
+  it('should show character count for URL field', async () => {
+    const user = userEvent.setup();
+    render(
+      <AddSourceModal onClose={mockOnClose} onAdd={mockOnAdd} />
+    );
+    
+    await user.type(screen.getByLabelText('URL'), 'example.com');
+    
+    expect(screen.getByText('11/500')).toBeInTheDocument();
+  });
 });

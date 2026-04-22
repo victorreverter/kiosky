@@ -8,6 +8,9 @@ interface AddSourceModalProps {
   onAdd: (source: Source) => void;
 }
 
+const MAX_NAME_LENGTH = 50;
+const MAX_URL_LENGTH = 500;
+
 export function AddSourceModal({ onClose, onAdd }: AddSourceModalProps) {
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
@@ -77,6 +80,16 @@ export function AddSourceModal({ onClose, onAdd }: AddSourceModalProps) {
     e.preventDefault();
     if (!name.trim() || !url.trim()) return;
 
+    if (name.trim().length > MAX_NAME_LENGTH) {
+      setUrlError("Site name is too long");
+      return;
+    }
+
+    if (url.trim().length > MAX_URL_LENGTH) {
+      setUrlError("URL is too long");
+      return;
+    }
+
     let finalUrl = url.trim();
     if (!finalUrl.startsWith("http://") && !finalUrl.startsWith("https://")) {
       finalUrl = "https://" + finalUrl;
@@ -104,14 +117,19 @@ export function AddSourceModal({ onClose, onAdd }: AddSourceModalProps) {
 
   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    setUrl(value);
-    if (urlError) {
-      setUrlError(null);
+    if (value.length <= MAX_URL_LENGTH) {
+      setUrl(value);
+      if (urlError) {
+        setUrlError(null);
+      }
     }
   };
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setName(e.target.value);
+    const value = e.target.value;
+    if (value.length <= MAX_NAME_LENGTH) {
+      setName(value);
+    }
   };
 
   return (
@@ -154,7 +172,11 @@ export function AddSourceModal({ onClose, onAdd }: AddSourceModalProps) {
               className="w-full px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:text-zinc-100 transition-shadow transition-colors placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
               required
               autoComplete="off"
+              maxLength={MAX_NAME_LENGTH}
             />
+            <span className="block mt-1 text-xs text-zinc-500 dark:text-zinc-400 text-right">
+              {name.length}/{MAX_NAME_LENGTH}
+            </span>
           </div>
 
           <div>
@@ -178,7 +200,11 @@ export function AddSourceModal({ onClose, onAdd }: AddSourceModalProps) {
               autoComplete="off"
               aria-invalid={urlError ? "true" : "false"}
               aria-describedby={urlError ? "url-error" : undefined}
+              maxLength={MAX_URL_LENGTH}
             />
+            <span className="block mt-1 text-xs text-zinc-500 dark:text-zinc-400 text-right">
+              {url.length}/{MAX_URL_LENGTH}
+            </span>
             {urlError && (
               <div id="url-error" className="mt-2 flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
                 <AlertCircle size={16} />
