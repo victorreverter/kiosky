@@ -33,7 +33,18 @@ export function generateId(): string {
 export function isValidHttpUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
-    return parsed.protocol === "http:" || parsed.protocol === "https:";
+    
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return false;
+    }
+
+    const dangerousProtocols = ["javascript:", "data:", "vbscript:", "file:"];
+    const urlLower = url.toLowerCase();
+    if (dangerousProtocols.some(protocol => urlLower.includes(protocol))) {
+      return false;
+    }
+
+    return true;
   } catch {
     return false;
   }

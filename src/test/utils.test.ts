@@ -23,6 +23,19 @@ describe('isValidHttpUrl', () => {
     expect(isValidHttpUrl('')).toBe(false);
     expect(isValidHttpUrl('ht tp://example.com')).toBe(false);
   });
+
+  it('should return false for URLs with dangerous protocols', () => {
+    expect(isValidHttpUrl('javascript:alert(1)')).toBe(false);
+    expect(isValidHttpUrl('data:text/html,<h1>Test</h1>')).toBe(false);
+    expect(isValidHttpUrl('vbscript:msgbox("test")')).toBe(false);
+    expect(isValidHttpUrl('file:///etc/passwd')).toBe(false);
+  });
+
+  it('should return false for URLs attempting to hide dangerous protocols', () => {
+    expect(isValidHttpUrl('https://example.com/javascript:alert(1)')).toBe(false);
+    expect(isValidHttpUrl('https://javascript:alert(1)')).toBe(false);
+    expect(isValidHttpUrl('https://example.com?redirect=data:text/html,<h1>Test</h1>')).toBe(false);
+  });
 });
 
 describe('generateId', () => {

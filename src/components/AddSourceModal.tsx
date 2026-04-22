@@ -87,6 +87,12 @@ export function AddSourceModal({ onClose, onAdd }: AddSourceModalProps) {
       return;
     }
 
+    const dangerousProtocols = ["javascript:", "data:", "vbscript:", "file:"];
+    if (dangerousProtocols.some(protocol => finalUrl.toLowerCase().includes(protocol))) {
+      setUrlError("This URL contains unsafe protocols");
+      return;
+    }
+
     setUrlError(null);
     onAdd({
       id: generateId(),
