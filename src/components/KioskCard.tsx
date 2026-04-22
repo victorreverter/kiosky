@@ -1,4 +1,4 @@
-import { memo, useCallback, useState } from "react";
+import { memo, useCallback, useState, useEffect } from "react";
 import { ExternalLink, Trash2 } from "lucide-react";
 import type { Source } from "../types";
 import { cn, getFaviconUrl, isValidHttpUrl } from "../lib/utils";
@@ -11,9 +11,39 @@ interface KioskCardProps {
   totalItems?: number;
 }
 
+const BREAKPOINTS = [
+  { query: '(min-width: 1024px)', columns: 5 },
+  { query: '(min-width: 768px)', columns: 4 },
+  { query: '(min-width: 640px)', columns: 3 },
+  { query: '(min-width: 0px)', columns: 2 },
+];
+
+function getCurrentColumns(): number {
+  for (const breakpoint of BREAKPOINTS) {
+    if (window.matchMedia(breakpoint.query).matches) {
+      return breakpoint.columns;
+    }
+  }
+  return 2;
+}
+
 export const KioskCard = memo(function KioskCard({ source, isEditMode, onDelete, index = 0, totalItems = 0 }: KioskCardProps) {
   const faviconUrl = getFaviconUrl(source.url);
   const [faviconFailed, setFaviconFailed] = useState(false);
+  const [currentColumns, setCurrentColumns] = useState(getCurrentColumns());
+
+  useEffect(() => {
+    const mediaQueries = BREAKPOINTS.map(bp => window.matchMedia(bp.query));
+    
+    const handleChange = () => {
+      setCurrentColumns(getCurrentColumns());
+    };
+
+    mediaQueries.forEach(mq => mq.addEventListener('change', handleChange));
+    return () => {
+      mediaQueries.forEach(mq => mq.removeEventListener('change', handleChange));
+    };
+  }, []);
 
   const handleClick = useCallback(() => {
     if (isEditMode) return;
@@ -52,11 +82,11 @@ export const KioskCard = memo(function KioskCard({ source, isEditMode, onDelete,
         nextIndex = (currentIndex - 1 + cards.length) % cards.length;
         break;
       case "ArrowDown":
-        nextIndex = currentIndex + 2;
+        nextIndex = currentIndex + currentColumns;
         if (nextIndex >= cards.length) nextIndex = currentIndex;
         break;
       case "ArrowUp":
-        nextIndex = currentIndex - 2;
+        nextIndex = currentIndex - currentColumns;
         if (nextIndex < 0) nextIndex = Math.max(0, cards.length - 1);
         break;
     }
@@ -66,7 +96,7 @@ export const KioskCard = memo(function KioskCard({ source, isEditMode, onDelete,
       const nextCard = cards[nextIndex] as HTMLElement;
       nextCard?.focus();
     }
-  }, [isEditMode]);
+  }, [isEditMode, currentColumns]);
   
   return (
     <div
