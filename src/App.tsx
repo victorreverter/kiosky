@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { Plus, Settings2, Moon, Sun, Monitor, ShieldAlert, Search, X } from "lucide-react";
+import { Plus, Settings2, Moon, Sun, Monitor, ShieldAlert, Search, X, Newspaper, Globe, Zap } from "lucide-react";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import type { Source } from "./types";
 import { KioskCard } from "./components/KioskCard";
@@ -260,15 +260,83 @@ function App() {
             </button>
           </div>
         ) : sources.length === 0 && !isEditMode ? (
-          <div className="text-center py-20 bg-white dark:bg-zinc-900/50 rounded-3xl border border-dashed border-zinc-300 dark:border-zinc-800">
-            <p className="text-zinc-500 dark:text-zinc-400 mb-4">Your newsstand is empty.</p>
-            <button
-              onClick={() => setIsEditMode(true)}
-              className="text-blue-600 dark:text-blue-400 font-medium hover:underline"
-              type="button"
-            >
-              Enter Edit Mode to add sources
-            </button>
+          <div className="text-center py-16 bg-white dark:bg-zinc-900/50 rounded-3xl border border-dashed border-zinc-300 dark:border-zinc-800">
+            <div className="mb-6 flex justify-center gap-4">
+              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl">
+                <Newspaper className="text-blue-600 dark:text-blue-400" size={48} />
+              </div>
+              <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-2xl">
+                <Globe className="text-purple-600 dark:text-purple-400" size={48} />
+              </div>
+              <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-2xl">
+                <Zap className="text-orange-600 dark:text-orange-400" size={48} />
+              </div>
+            </div>
+            
+            <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">
+              Welcome to Your Personal Newsstand
+            </h2>
+            <p className="text-zinc-500 dark:text-zinc-400 mb-6 max-w-md mx-auto">
+              Kiosky helps you organize and access your favorite websites in one beautiful place. 
+              Start by adding your first source.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
+              <button
+                onClick={() => setIsEditMode(true)}
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-full transition-colors shadow-lg hover:shadow-xl flex items-center gap-2"
+                type="button"
+              >
+                <Plus size={20} />
+                Add Your First Source
+              </button>
+            </div>
+            
+            <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6">
+              <p className="text-sm text-zinc-400 dark:text-zinc-500 mb-3">Popular sources to get started:</p>
+              <div className="flex flex-wrap justify-center gap-2">
+                <button
+                  onClick={() => {
+                    setIsEditMode(true);
+                    setIsAddModalOpen(true);
+                  }}
+                  className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-sm rounded-full transition-colors"
+                  type="button"
+                >
+                  📰 News
+                </button>
+                <button
+                  onClick={() => {
+                    setIsEditMode(true);
+                    setIsAddModalOpen(true);
+                  }}
+                  className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-sm rounded-full transition-colors"
+                  type="button"
+                >
+                  💻 Tech
+                </button>
+                <button
+                  onClick={() => {
+                    setIsEditMode(true);
+                    setIsAddModalOpen(true);
+                  }}
+                  className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-sm rounded-full transition-colors"
+                  type="button"
+                >
+                  🎮 Entertainment
+                </button>
+                <button
+                  onClick={() => {
+                    setIsEditMode(true);
+                    setIsAddModalOpen(true);
+                  }}
+                  className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-sm rounded-full transition-colors"
+                  type="button"
+                >
+                  📺 YouTube
+                </button>
+              </div>
+            </div>
           </div>
         ) : (
           <div 
