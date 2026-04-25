@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { Plus, Settings2, Moon, Sun, Monitor, ShieldAlert } from "lucide-react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { Plus, Settings2, Moon, Sun, Monitor, ShieldAlert, Search, X } from "lucide-react";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import type { Source } from "./types";
 import { KioskCard } from "./components/KioskCard";
@@ -37,6 +37,8 @@ function App() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingSource, setEditingSource] = useState<Source | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
   
   // Apply theme class
   useEffect(() => {
@@ -101,9 +103,41 @@ function App() {
     setEditingSource(null);
   }, [setSources]);
 
+  const handleClearSearch = useCallback(() => {
+    setSearchQuery("");
+    searchInputRef.current?.focus();
+  }, []);
+
+  const isModalOpen = isAddModalOpen || !!editingSource;
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === '/' && !isModalOpen) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+      if (e.key === 'Escape' && searchQuery) {
+        handleClearSearch();
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [searchQuery, isModalOpen, handleClearSearch]);
+
 
 
   const currentThemeIcon = useMemo(() => THEME_ICONS[theme], [theme]);
+
+  const filteredSources = useMemo(() => {
+    if (!searchQuery.trim()) return sources;
+    
+    const query = searchQuery.toLowerCase().trim();
+    return sources.filter(source => 
+      source.name.toLowerCase().includes(query) ||
+      source.url.toLowerCase().includes(query)
+    );
+  }, [sources, searchQuery]);
 
   return (
     <div className="min-h-screen bg-transparent p-6 md:p-12 lg:p-24 max-w-6xl mx-auto">
@@ -142,6 +176,29 @@ function App() {
         </div>
         
         <div className="flex items-center gap-3">
+          <div className="relative">
+            <input
+              ref={searchInputRef}
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search sources..."
+              className="w-48 px-4 py-2 pl-10 rounded-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:text-zinc-100 text-sm"
+              aria-label="Search sources"
+            />
+            <Search className="absolute left-3 top-2.5 text-zinc-400" size={16} />
+            {searchQuery && (
+              <button
+                onClick={handleClearSearch}
+                className="absolute right-3 top-2.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                aria-label="Clear search"
+                type="button"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+          
           <button
             onClick={toggleTheme}
             className="p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-full shadow-sm hover:shadow-md hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all text-zinc-600 dark:text-zinc-300"
@@ -184,7 +241,25 @@ function App() {
           </div>
         )}
 
-        {sources.length === 0 && !isEditMode ? (
+        <div className="mb-4 text-sm text-zinc-500 dark:text-zinc-400" role="status" aria-live="polite">
+          {filteredSources.length} of {sources.length} sources
+          {searchQuery && ` matching "${searchQuery}"`}
+        </div>
+
+        {filteredSources.length === 0 && searchQuery ? (
+          <div className="text-center py-20 bg-white dark:bg-zinc-900/50 rounded-3xl border border-dashed border-zinc-300 dark:border-zinc-800">
+            <p className="text-zinc-500 dark:text-zinc-400 mb-2">
+              No sources found matching "{searchQuery}"
+            </p>
+            <button
+              onClick={handleClearSearch}
+              className="text-blue-600 dark:text-blue-400 font-medium hover:underline"
+              type="button"
+            >
+              Clear search
+            </button>
+          </div>
+        ) : sources.length === 0 && !isEditMode ? (
           <div className="text-center py-20 bg-white dark:bg-zinc-900/50 rounded-3xl border border-dashed border-zinc-300 dark:border-zinc-800">
             <p className="text-zinc-500 dark:text-zinc-400 mb-4">Your newsstand is empty.</p>
             <button
@@ -201,7 +276,7 @@ function App() {
             role="list"
             aria-label="News sources"
           >
-            {sources.map((source, index) => (
+            {filteredSources.map((source, index) => (
               <KioskCard
                 key={source.id}
                 source={source}
@@ -209,7 +284,7 @@ function App() {
                 onDelete={handleDeleteSource}
                 onEdit={handleEditSource}
                 index={index}
-                totalItems={sources.length}
+                totalItems={filteredSources.length}
               />
             ))}
             
