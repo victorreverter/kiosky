@@ -5,30 +5,37 @@ interface UseLocalStorageReturn<T> {
   setValue: (value: T | ((val: T) => T)) => void;
   error: string | null;
   clearError: () => void;
+  isLoading: boolean;
 }
 
 export function useLocalStorage<T>(key: string, initialValue: T): UseLocalStorageReturn<T> {
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   
   const [storedValue, setStoredValue] = useState<T>(() => {
+    setIsLoading(true);
     if (typeof window === "undefined") {
       return initialValue;
     }
     try {
       const item = window.localStorage.getItem(key);
       if (item === null) {
+        setIsLoading(false);
         return initialValue;
       }
       try {
+        setIsLoading(false);
         return JSON.parse(item) as T;
       } catch (parseError) {
         console.error(`Failed to parse localStorage item "${key}":`, parseError);
         setError("Stored data was corrupted and has been reset");
+        setIsLoading(false);
         return initialValue;
       }
     } catch (readError) {
       console.error("Error reading localStorage:", readError);
       setError("Failed to read from storage");
+      setIsLoading(false);
       return initialValue;
     }
   });
@@ -60,5 +67,5 @@ export function useLocalStorage<T>(key: string, initialValue: T): UseLocalStorag
     setError(null);
   }, []);
 
-  return { storedValue, setValue, error, clearError };
+  return { storedValue, setValue, error, clearError, isLoading };
 }

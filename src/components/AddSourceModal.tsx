@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { X, AlertCircle } from "lucide-react";
+import { X, AlertCircle, Loader2 } from "lucide-react";
 import { generateId, isValidHttpUrl, cn } from "../lib/utils";
 import type { Source } from "../types";
 
@@ -30,14 +30,10 @@ export function AddSourceModal({ onClose, onAdd, onEdit, existingSources = [], e
   const [name, setName] = useState(editSource?.name ?? "");
   const [url, setUrl] = useState(editSource?.url ?? "");
   const [urlError, setUrlError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-
-  // Focus first input on mount
-  useEffect(() => {
-    nameInputRef.current?.focus();
-  }, []);
 
   // Handle Escape key to close modal
   useEffect(() => {
@@ -131,6 +127,7 @@ export function AddSourceModal({ onClose, onAdd, onEdit, existingSources = [], e
       return;
     }
 
+    setIsSubmitting(true);
     setUrlError(null);
     
     if (editSource && onEdit) {
@@ -147,6 +144,8 @@ export function AddSourceModal({ onClose, onAdd, onEdit, existingSources = [], e
         addedAt: Date.now(),
       });
     }
+    
+    setIsSubmitting(false);
   };
 
   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -254,15 +253,23 @@ export function AddSourceModal({ onClose, onAdd, onEdit, existingSources = [], e
               type="button"
               onClick={onClose}
               className="px-5 py-2.5 text-sm font-medium text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors"
+              disabled={isSubmitting}
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={!name.trim() || !url.trim()}
-              className="px-5 py-2.5 text-sm font-medium text-white bg-zinc-900 dark:bg-white dark:text-zinc-900 rounded-xl hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!name.trim() || !url.trim() || isSubmitting}
+              className="px-5 py-2.5 text-sm font-medium text-white bg-zinc-900 dark:bg-white dark:text-zinc-900 rounded-xl hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 min-w-[120px] justify-center"
             >
-              {editSource ? "Save Changes" : "Add Source"}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="animate-spin" size={16} />
+                  <span>{editSource ? "Saving..." : "Adding..."}</span>
+                </>
+              ) : (
+                <span>{editSource ? "Save Changes" : "Add Source"}</span>
+              )}
             </button>
           </div>
         </form>

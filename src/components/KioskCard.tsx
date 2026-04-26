@@ -1,5 +1,5 @@
 import { memo, useCallback, useState, useEffect } from "react";
-import { ExternalLink, Trash2, Edit2 } from "lucide-react";
+import { ExternalLink, Trash2, Edit2, Loader2 } from "lucide-react";
 import type { Source } from "../types";
 import { cn, getFaviconUrl, isValidHttpUrl } from "../lib/utils";
 
@@ -31,6 +31,7 @@ function getCurrentColumns(): number {
 export const KioskCard = memo(function KioskCard({ source, isEditMode, onDelete, onEdit, index = 0, totalItems = 0 }: KioskCardProps) {
   const faviconUrl = getFaviconUrl(source.url);
   const [faviconFailed, setFaviconFailed] = useState(false);
+  const [faviconLoading, setFaviconLoading] = useState(true);
   const [currentColumns, setCurrentColumns] = useState(getCurrentColumns());
 
   useEffect(() => {
@@ -153,13 +154,21 @@ export const KioskCard = memo(function KioskCard({ source, isEditMode, onDelete,
 
       <div className="w-16 h-16 mb-4 flex items-center justify-center rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700/50 shadow-inner overflow-hidden">
         {faviconUrl && !faviconFailed ? (
-          <img
-            src={faviconUrl}
-            alt={`${source.name} icon`}
-            className="w-10 h-10 object-contain drop-shadow-sm"
-            onError={() => setFaviconFailed(true)}
-            loading="lazy"
-          />
+          <>
+            {faviconLoading && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Loader2 className="animate-spin text-zinc-400 dark:text-zinc-500" size={20} />
+              </div>
+            )}
+            <img
+              src={faviconUrl}
+              alt={`${source.name} icon`}
+              className={cn("w-10 h-10 object-contain drop-shadow-sm transition-opacity duration-200", faviconLoading ? "opacity-0" : "opacity-100")}
+              onError={() => setFaviconFailed(true)}
+              onLoad={() => setFaviconLoading(false)}
+              loading="lazy"
+            />
+          </>
         ) : null}
         <div className={cn("text-2xl font-semibold text-zinc-400 dark:text-zinc-500 uppercase", (!faviconUrl || faviconFailed) ? "block" : "hidden")}>
           {source.name.charAt(0)}

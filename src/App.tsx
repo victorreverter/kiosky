@@ -24,7 +24,8 @@ function App() {
     storedValue: sources, 
     setValue: setSources, 
     error: sourcesError, 
-    clearError: clearSourcesError 
+    clearError: clearSourcesError,
+    isLoading: sourcesLoading
   } = useLocalStorage<Source[]>("kiosky_sources", DEFAULT_SOURCES);
   
   const { 
@@ -169,11 +170,22 @@ function App() {
         </div>
       )}
 
-      <header className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
-        <div>
-          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-zinc-900 dark:text-white mb-2">Kiosky</h1>
-          <p className="text-zinc-500 dark:text-zinc-400 font-medium">Your personal digital newsstand.</p>
+      {sourcesLoading ? (
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <div className="mb-4 flex justify-center">
+              <div className="w-12 h-12 border-4 border-blue-200 dark:border-blue-900 border-t-blue-600 dark:border-t-blue-400 rounded-full animate-spin"></div>
+            </div>
+            <p className="text-zinc-500 dark:text-zinc-400">Loading your newsstand...</p>
+          </div>
         </div>
+      ) : (
+        <>
+        <header className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
+          <div>
+            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-zinc-900 dark:text-white mb-2">Kiosky</h1>
+            <p className="text-zinc-500 dark:text-zinc-400 font-medium">Your personal digital newsstand.</p>
+          </div>
         
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -392,8 +404,10 @@ function App() {
           existingSources={sources}
         />
       )}
-    </div>
-  );
+      </>
+    )}
+  </div>
+);
 }
 
 export default App;
