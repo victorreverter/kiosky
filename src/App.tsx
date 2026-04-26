@@ -4,6 +4,7 @@ import { useLocalStorage } from "./hooks/useLocalStorage";
 import type { Source } from "./types";
 import { KioskCard } from "./components/KioskCard";
 import { AddSourceModal } from "./components/AddSourceModal";
+import { ComponentErrorBoundary } from "./components/ComponentErrorBoundary";
 import { cn, isValidHttpUrl } from "./lib/utils";
 
 const DEFAULT_SOURCES: Source[] = [
@@ -357,15 +358,19 @@ function App() {
             aria-label="News sources"
           >
             {filteredSources.map((source, index) => (
-              <KioskCard
+              <ComponentErrorBoundary
                 key={source.id}
-                source={source}
-                isEditMode={isEditMode}
-                onDelete={handleDeleteSource}
-                onEdit={handleEditSource}
-                index={index}
-                totalItems={filteredSources.length}
-              />
+                name={`KioskCard: ${source.name}`}
+              >
+                <KioskCard
+                  source={source}
+                  isEditMode={isEditMode}
+                  onDelete={handleDeleteSource}
+                  onEdit={handleEditSource}
+                  index={index}
+                  totalItems={filteredSources.length}
+                />
+              </ComponentErrorBoundary>
             ))}
             
             {isEditMode && (
@@ -389,20 +394,24 @@ function App() {
       </main>
 
       {isAddModalOpen && (
-        <AddSourceModal
-          onClose={() => setIsAddModalOpen(false)}
-          onAdd={handleAddSource}
-          existingSources={sources}
-        />
+        <ComponentErrorBoundary name="AddSourceModal">
+          <AddSourceModal
+            onClose={() => setIsAddModalOpen(false)}
+            onAdd={handleAddSource}
+            existingSources={sources}
+          />
+        </ComponentErrorBoundary>
       )}
 
       {editingSource && (
-        <AddSourceModal
-          onClose={() => setEditingSource(null)}
-          onEdit={handleUpdateSource}
-          editSource={editingSource}
-          existingSources={sources}
-        />
+        <ComponentErrorBoundary name="EditSourceModal">
+          <AddSourceModal
+            onClose={() => setEditingSource(null)}
+            onEdit={handleUpdateSource}
+            editSource={editingSource}
+            existingSources={sources}
+          />
+        </ComponentErrorBoundary>
       )}
       </>
     )}
