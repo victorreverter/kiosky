@@ -95,6 +95,11 @@ export function AddSourceModal({ onClose, onAdd, onEdit, existingSources = [], e
     return () => modal.removeEventListener("keydown", handleTabKey);
   }, []);
 
+  // Focus first input on mount
+  useEffect(() => {
+    nameInputRef.current?.focus();
+  }, []);
+
   // Lock body scroll when modal is open
   useEffect(() => {
     const originalStyle = window.getComputedStyle(document.body).overflow;

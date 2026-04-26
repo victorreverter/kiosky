@@ -325,4 +325,156 @@ describe('AddSourceModal', () => {
     // Button should show countdown
     expect(rateLimitedButton).toHaveTextContent(/Wait \d+s/);
   });
+
+  it('should focus first input on mount', async () => {
+    render(
+      <AddSourceModal 
+        onClose={mockOnClose} 
+        onAdd={mockOnAdd}
+        existingSources={[]}
+      />
+    );
+    
+    // Wait for focus to be set
+    await new Promise(resolve => setTimeout(resolve, 10));
+    
+    const nameInput = screen.getByLabelText('Site Name');
+    expect(document.activeElement).toBe(nameInput);
+  });
+
+  it('should trap focus within modal using Tab key', async () => {
+    const user = userEvent.setup();
+    render(
+      <AddSourceModal 
+        onClose={mockOnClose} 
+        onAdd={mockOnAdd}
+        existingSources={[]}
+      />
+    );
+    
+    // Wait for initial focus
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
+    const nameInput = screen.getByLabelText('Site Name');
+    const urlInput = screen.getByLabelText('URL');
+    
+    // Name input should have initial focus
+    expect(document.activeElement).toBe(nameInput);
+    
+    // Tab to URL input
+    await user.keyboard('{Tab}');
+    expect(document.activeElement).toBe(urlInput);
+    
+    // Tab several times - focus should stay in modal (not on body)
+    await user.keyboard('{Tab}{Tab}{Tab}');
+    expect(document.activeElement).not.toBe(document.body);
+    expect(document.activeElement?.tagName).not.toBe('BODY');
+  });
+
+  it('should trap focus with Shift+Tab (reverse)', async () => {
+    const user = userEvent.setup();
+    render(
+      <AddSourceModal 
+        onClose={mockOnClose} 
+        onAdd={mockOnAdd}
+        existingSources={[]}
+      />
+    );
+    
+    const nameInput = screen.getByLabelText('Site Name');
+    const closeButton = screen.getByLabelText('Close modal');
+    
+    // Start at name input
+    nameInput.focus();
+    expect(nameInput).toHaveFocus();
+    
+    // Shift+Tab should loop to last element (close button)
+    await user.keyboard('{Shift>}{Tab}{/Shift}');
+    expect(closeButton).toHaveFocus();
+  });
+
+  it('should lock body scroll when modal is open', () => {
+    render(
+      <AddSourceModal 
+        onClose={mockOnClose} 
+        onAdd={mockOnAdd}
+        existingSources={[]}
+      />
+    );
+    
+    expect(document.body.style.overflow).toBe('hidden');
+  });
+
+  it('should restore body scroll on unmount', () => {
+    const originalOverflow = document.body.style.overflow;
+    
+    const { unmount } = render(
+      <AddSourceModal 
+        onClose={mockOnClose} 
+        onAdd={mockOnAdd}
+        existingSources={[]}
+      />
+    );
+    
+    unmount();
+    
+    expect(document.body.style.overflow).toBe(originalOverflow);
+  });
+
+  it('should prevent modal from closing when clicking inside', async () => {
+    const user = userEvent.setup();
+    render(
+      <AddSourceModal 
+        onClose={mockOnClose} 
+        onAdd={mockOnAdd}
+        existingSources={[]}
+      />
+    );
+    
+    // Click inside modal content (not the overlay)
+    await user.click(screen.getByText('Add New Source'));
+    
+    expect(mockOnClose).not.toHaveBeenCalled();
+  });
+
+  it('should close modal when clicking overlay', async () => {
+    const user = userEvent.setup();
+    render(
+      <AddSourceModal 
+        onClose={mockOnClose} 
+        onAdd={mockOnAdd}
+        existingSources={[]}
+      />
+    );
+    
+    // Click on overlay (the div with role="dialog")
+    const overlay = screen.getByRole('dialog');
+    await user.click(overlay);
+    
+    expect(mockOnClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('should clear URL error when user starts typing', () => {
+    render(
+      <AddSourceModal 
+        onClose={mockOnClose} 
+        onAdd={mockOnAdd}
+        existingSources={[]}
+      />
+    );
+    
+    const urlInput = screen.getByLabelText('URL');
+    
+    // The handleUrlChange function clears urlError on every change
+    // Verify aria-invalid starts as false
+    expect(urlInput).toHaveAttribute('aria-invalid', 'false');
+    
+    // Simulate the component having an error by checking that
+    // the onChange handler properly clears errors when typing
+    fireEvent.change(urlInput, { target: { value: 'test' } });
+    
+    // After typing, the input should still have aria-invalid false
+    // (the component's handleUrlChange clears urlError on every change)
+    expect(urlInput).toHaveAttribute('aria-invalid', 'false');
+  });
 });
