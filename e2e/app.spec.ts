@@ -84,4 +84,11 @@ test.describe('Kiosky App', () => {
     await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeFocused();
   });
+
+  test('should show drag handles in edit mode', async ({ page }) => {
+    await page.getByRole('button', { name: 'Edit Mode' }).click();
+    
+    const dragHandle = page.locator('[aria-label="Drag to reorder"]').first();
+    await expect(dragHandle).toBeVisible();
+  });
 });

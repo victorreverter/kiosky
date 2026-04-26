@@ -1,8 +1,10 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { Plus, Settings2, Moon, Sun, Monitor, ShieldAlert, Search, X, Newspaper, Globe, Zap } from "lucide-react";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import type { Source } from "./types";
-import { KioskCard } from "./components/KioskCard";
+import { SortableKioskCard } from "./components/SortableKioskCard";
 import { AddSourceModal } from "./components/AddSourceModal";
 import { ComponentErrorBoundary } from "./components/ComponentErrorBoundary";
 import { cn, isValidHttpUrl } from "./lib/utils";
@@ -109,6 +111,34 @@ function App() {
     setSearchQuery("");
     searchInputRef.current?.focus();
   }, []);
+
+  const handleDragEnd = useCallback((event: { active: { id: string }; over: { id: string } | null }) => {
+    const { active, over } = event;
+    
+    if (over && active.id !== over.id) {
+      setSources((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+        
+        const newItems = [...items];
+        const [removed] = newItems.splice(oldIndex, 1);
+        newItems.splice(newIndex, 0, removed);
+        
+        return newItems;
+      });
+    }
+  }, [setSources]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const isModalOpen = isAddModalOpen || !!editingSource;
 
@@ -352,44 +382,48 @@ function App() {
             </div>
           </div>
         ) : (
-          <div 
-            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6" 
-            role="list"
-            aria-label="News sources"
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
           >
-            {filteredSources.map((source, index) => (
-              <ComponentErrorBoundary
-                key={source.id}
-                name={`KioskCard: ${source.name}`}
-              >
-                <KioskCard
-                  source={source}
-                  isEditMode={isEditMode}
-                  onDelete={handleDeleteSource}
-                  onEdit={handleEditSource}
-                  index={index}
-                  totalItems={filteredSources.length}
-                />
-              </ComponentErrorBoundary>
-            ))}
-            
-            {isEditMode && (
-              <button
-                onClick={() => setIsAddModalOpen(true)}
-                className="flex flex-col items-center justify-center rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border-2 border-dashed border-zinc-200 dark:border-zinc-800 h-[154px] hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors group"
-                aria-label="Add new source"
-                type="button"
-                role="listitem"
-              >
-                <div className="w-12 h-12 mb-2 flex items-center justify-center rounded-xl bg-zinc-200/50 dark:bg-zinc-800 text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors">
-                  <Plus size={24} />
-                </div>
-                <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200">
-                  Add Source
-                </span>
-              </button>
-            )}
-          </div>
+            <div 
+              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6" 
+              role="list"
+              aria-label="News sources"
+            >
+              {filteredSources.map((source) => (
+                <ComponentErrorBoundary
+                  key={source.id}
+                  name={`KioskCard: ${source.name}`}
+                >
+                  <SortableKioskCard
+                    source={source}
+                    isEditMode={isEditMode}
+                    onDelete={handleDeleteSource}
+                    onEdit={handleEditSource}
+                  />
+                </ComponentErrorBoundary>
+              ))}
+              
+              {isEditMode && (
+                <button
+                  onClick={() => setIsAddModalOpen(true)}
+                  className="flex flex-col items-center justify-center rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border-2 border-dashed border-zinc-200 dark:border-zinc-800 h-[154px] hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors group"
+                  aria-label="Add new source"
+                  type="button"
+                  role="listitem"
+                >
+                  <div className="w-12 h-12 mb-2 flex items-center justify-center rounded-xl bg-zinc-200/50 dark:bg-zinc-800 text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors">
+                    <Plus size={24} />
+                  </div>
+                  <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200">
+                    Add Source
+                  </span>
+                </button>
+              )}
+            </div>
+          </DndContext>
         )}
       </main>
 
