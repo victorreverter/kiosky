@@ -295,4 +295,34 @@ describe('AddSourceModal', () => {
     
     expect(mockOnEdit).toHaveBeenCalledTimes(1);
   });
+
+  it('should enforce rate limiting on rapid submissions', async () => {
+    const user = userEvent.setup();
+    const mockOnAdd = vi.fn();
+    
+    render(
+      <AddSourceModal 
+        onClose={mockOnClose} 
+        onAdd={mockOnAdd}
+        existingSources={[]}
+      />
+    );
+    
+    await user.type(screen.getByLabelText('Site Name'), 'Test');
+    await user.type(screen.getByLabelText('URL'), 'example.com');
+    
+    // First submission should succeed
+    fireEvent.submit(screen.getByRole('button', { name: 'Add Source' }));
+    expect(mockOnAdd).toHaveBeenCalledTimes(1);
+    
+    // Wait for button text to update
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Second submission should be rate limited (button is disabled)
+    const rateLimitedButton = screen.getByRole('button', { name: /Wait \d+s/ });
+    expect(rateLimitedButton).toBeDisabled();
+    
+    // Button should show countdown
+    expect(rateLimitedButton).toHaveTextContent(/Wait \d+s/);
+  });
 });

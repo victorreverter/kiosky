@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { X, AlertCircle, Loader2 } from "lucide-react";
+import { X, AlertCircle, Loader2, Clock } from "lucide-react";
 import { generateId, isValidHttpUrl, cn } from "../lib/utils";
 import type { Source } from "../types";
 
@@ -13,6 +13,7 @@ interface AddSourceModalProps {
 
 const MAX_NAME_LENGTH = 50;
 const MAX_URL_LENGTH = 500;
+const RATE_LIMIT_COOLDOWN = 2000;
 
 function normalizeUrl(url: string): string {
   try {
@@ -31,9 +32,25 @@ export function AddSourceModal({ onClose, onAdd, onEdit, existingSources = [], e
   const [url, setUrl] = useState(editSource?.url ?? "");
   const [urlError, setUrlError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lastSubmissionTime, setLastSubmissionTime] = useState<number>(0);
+  const [currentTime, setCurrentTime] = useState(() => Date.now());
   const modalRef = useRef<HTMLDivElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  const timeSinceLastSubmission = currentTime - lastSubmissionTime;
+  const isRateLimited = timeSinceLastSubmission < RATE_LIMIT_COOLDOWN;
+  const remainingCooldown = Math.max(0, RATE_LIMIT_COOLDOWN - timeSinceLastSubmission);
+
+  // Update current time to trigger re-render for countdown
+  useEffect(() => {
+    if (isRateLimited) {
+      const interval = setInterval(() => {
+        setCurrentTime(Date.now());
+      }, 100);
+      return () => clearInterval(interval);
+    }
+  }, [isRateLimited]);
 
   // Handle Escape key to close modal
   useEffect(() => {
@@ -127,8 +144,14 @@ export function AddSourceModal({ onClose, onAdd, onEdit, existingSources = [], e
       return;
     }
 
+    if (isRateLimited) {
+      setUrlError(`Please wait ${Math.ceil(remainingCooldown / 1000)}s before adding another source`);
+      return;
+    }
+
     setIsSubmitting(true);
     setUrlError(null);
+    setLastSubmissionTime(Date.now());
     
     if (editSource && onEdit) {
       onEdit({
@@ -253,19 +276,24 @@ export function AddSourceModal({ onClose, onAdd, onEdit, existingSources = [], e
               type="button"
               onClick={onClose}
               className="px-5 py-2.5 text-sm font-medium text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isRateLimited}
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={!name.trim() || !url.trim() || isSubmitting}
+              disabled={!name.trim() || !url.trim() || isSubmitting || isRateLimited}
               className="px-5 py-2.5 text-sm font-medium text-white bg-zinc-900 dark:bg-white dark:text-zinc-900 rounded-xl hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 min-w-[120px] justify-center"
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="animate-spin" size={16} />
                   <span>{editSource ? "Saving..." : "Adding..."}</span>
+                </>
+              ) : isRateLimited ? (
+                <>
+                  <Clock className="animate-pulse" size={16} />
+                  <span>Wait {Math.ceil(remainingCooldown / 1000)}s</span>
                 </>
               ) : (
                 <span>{editSource ? "Save Changes" : "Add Source"}</span>
