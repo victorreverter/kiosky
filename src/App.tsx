@@ -1,14 +1,15 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from "react";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { Plus, Settings2, Moon, Sun, Monitor, ShieldAlert, Search, X, Newspaper, Globe, Zap, FileUp } from "lucide-react";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import type { Source } from "./types";
 import { SortableKioskCard } from "./components/SortableKioskCard";
-import { AddSourceModal } from "./components/AddSourceModal";
-import { ImportExportModal } from "./components/ImportExportModal";
 import { ComponentErrorBoundary } from "./components/ComponentErrorBoundary";
 import { cn, isValidHttpUrl } from "./lib/utils";
+
+const AddSourceModal = lazy(() => import("./components/AddSourceModal").then(module => ({ default: module.AddSourceModal })));
+const ImportExportModal = lazy(() => import("./components/ImportExportModal").then(module => ({ default: module.ImportExportModal })));
 
 const DEFAULT_SOURCES: Source[] = [
   { id: "1", name: "NY Times", url: "https://nytimes.com", addedAt: Date.now() },
@@ -22,6 +23,14 @@ const THEME_ICONS = {
   dark: <Moon size={20} />,
   system: <Monitor size={20} />,
 } as const;
+
+function ModalLoadingSpinner() {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/50 backdrop-blur-sm">
+      <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+    </div>
+  );
+}
 
 function App() {
   const { 
@@ -447,34 +456,40 @@ function App() {
       </main>
 
       {isAddModalOpen && (
-        <ComponentErrorBoundary name="AddSourceModal">
-          <AddSourceModal
-            onClose={() => setIsAddModalOpen(false)}
-            onAdd={handleAddSource}
-            existingSources={sources}
-          />
-        </ComponentErrorBoundary>
+        <Suspense fallback={<ModalLoadingSpinner />}>
+          <ComponentErrorBoundary name="AddSourceModal">
+            <AddSourceModal
+              onClose={() => setIsAddModalOpen(false)}
+              onAdd={handleAddSource}
+              existingSources={sources}
+            />
+          </ComponentErrorBoundary>
+        </Suspense>
       )}
 
       {editingSource && (
-        <ComponentErrorBoundary name="EditSourceModal">
-          <AddSourceModal
-            onClose={() => setEditingSource(null)}
-            onEdit={handleUpdateSource}
-            editSource={editingSource}
-            existingSources={sources}
-          />
-        </ComponentErrorBoundary>
+        <Suspense fallback={<ModalLoadingSpinner />}>
+          <ComponentErrorBoundary name="EditSourceModal">
+            <AddSourceModal
+              onClose={() => setEditingSource(null)}
+              onEdit={handleUpdateSource}
+              editSource={editingSource}
+              existingSources={sources}
+            />
+          </ComponentErrorBoundary>
+        </Suspense>
       )}
 
       {isImportExportModalOpen && (
-        <ComponentErrorBoundary name="ImportExportModal">
-          <ImportExportModal
-            onClose={() => setIsImportExportModalOpen(false)}
-            sources={sources}
-            onImport={handleImportSources}
-          />
-        </ComponentErrorBoundary>
+        <Suspense fallback={<ModalLoadingSpinner />}>
+          <ComponentErrorBoundary name="ImportExportModal">
+            <ImportExportModal
+              onClose={() => setIsImportExportModalOpen(false)}
+              sources={sources}
+              onImport={handleImportSources}
+            />
+          </ComponentErrorBoundary>
+        </Suspense>
       )}
       </>
     )}

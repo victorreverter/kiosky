@@ -1,4 +1,4 @@
-import { memo, useCallback, useState, useEffect } from "react";
+import { memo, useCallback, useState, useEffect, useMemo } from "react";
 import { ExternalLink, Trash2, Edit2, Loader2 } from "lucide-react";
 import type { Source } from "../types";
 import { cn, getFaviconUrl, isValidHttpUrl } from "../lib/utils";
@@ -29,10 +29,10 @@ function getCurrentColumns(): number {
 }
 
 export const KioskCard = memo(function KioskCard({ source, isEditMode, onDelete, onEdit, index = 0, totalItems = 0 }: KioskCardProps) {
-  const faviconUrl = getFaviconUrl(source.url);
+  const faviconUrl = useMemo(() => getFaviconUrl(source.url), [source.url]);
   const [faviconFailed, setFaviconFailed] = useState(false);
   const [faviconLoading, setFaviconLoading] = useState(true);
-  const [currentColumns, setCurrentColumns] = useState(getCurrentColumns());
+  const [currentColumns, setCurrentColumns] = useState(getCurrentColumns);
 
   useEffect(() => {
     const mediaQueries = BREAKPOINTS.map(bp => window.matchMedia(bp.query));
