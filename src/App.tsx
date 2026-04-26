@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import { Plus, Settings2, Moon, Sun, Monitor, ShieldAlert, Search, X, Newspaper, Globe, Zap } from "lucide-react";
+import { Plus, Settings2, Moon, Sun, Monitor, ShieldAlert, Search, X, Newspaper, Globe, Zap, FileUp } from "lucide-react";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import type { Source } from "./types";
 import { SortableKioskCard } from "./components/SortableKioskCard";
 import { AddSourceModal } from "./components/AddSourceModal";
+import { ImportExportModal } from "./components/ImportExportModal";
 import { ComponentErrorBoundary } from "./components/ComponentErrorBoundary";
 import { cn, isValidHttpUrl } from "./lib/utils";
 
@@ -41,6 +42,7 @@ function App() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingSource, setEditingSource] = useState<Source | null>(null);
+  const [isImportExportModalOpen, setIsImportExportModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
   
@@ -107,12 +109,20 @@ function App() {
     setEditingSource(null);
   }, [setSources]);
 
+  const handleImportSources = useCallback((importedSources: Source[]) => {
+    setSources((prevSources) => {
+      const existingIds = new Set(prevSources.map(s => s.id));
+      const newSources = importedSources.filter(s => !existingIds.has(s.id));
+      return [...prevSources, ...newSources];
+    });
+  }, [setSources]);
+
   const handleClearSearch = useCallback(() => {
     setSearchQuery("");
     searchInputRef.current?.focus();
   }, []);
 
-  const handleDragEnd = useCallback((event: { active: { id: string }; over: { id: string } | null }) => {
+  const handleDragEnd = useCallback((event: { active: { id: string | number }; over: { id: string | number } | null }) => {
     const { active, over } = event;
     
     if (over && active.id !== over.id) {
@@ -249,6 +259,15 @@ function App() {
             type="button"
           >
             {currentThemeIcon}
+          </button>
+          
+          <button
+            onClick={() => setIsImportExportModalOpen(true)}
+            className="p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-full shadow-sm hover:shadow-md hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all text-zinc-600 dark:text-zinc-300"
+            aria-label="Import or export sources"
+            type="button"
+          >
+            <FileUp size={20} />
           </button>
           
           <button
@@ -444,6 +463,16 @@ function App() {
             onEdit={handleUpdateSource}
             editSource={editingSource}
             existingSources={sources}
+          />
+        </ComponentErrorBoundary>
+      )}
+
+      {isImportExportModalOpen && (
+        <ComponentErrorBoundary name="ImportExportModal">
+          <ImportExportModal
+            onClose={() => setIsImportExportModalOpen(false)}
+            sources={sources}
+            onImport={handleImportSources}
           />
         </ComponentErrorBoundary>
       )}

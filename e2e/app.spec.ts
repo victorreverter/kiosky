@@ -91,4 +91,22 @@ test.describe('Kiosky App', () => {
     const dragHandle = page.locator('[aria-label="Drag to reorder"]').first();
     await expect(dragHandle).toBeVisible();
   });
+
+  test('should open import/export modal', async ({ page }) => {
+    const importExportButton = page.locator('[aria-label="Import or export sources"]');
+    await importExportButton.click();
+    
+    await expect(page.getByRole('heading', { name: 'Import / Export' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Export Sources', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Import Sources', exact: true })).toBeVisible();
+  });
+
+  test('should close import/export modal', async ({ page }) => {
+    const importExportButton = page.locator('[aria-label="Import or export sources"]');
+    await importExportButton.click();
+    
+    await page.getByRole('button', { name: 'Close modal' }).click();
+    
+    await expect(page.getByRole('heading', { name: 'Import / Export' })).not.toBeVisible();
+  });
 });
