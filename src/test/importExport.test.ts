@@ -62,15 +62,15 @@ describe('importExport', () => {
     });
 
     it('should return empty array for sources with no valid entries', () => {
-      const exportData: ExportData = {
+      const exportData = {
         version: '1.0',
         exportedAt: Date.now(),
         sources: [
-          { id: 'invalid' as unknown as number, name: null as unknown as string, url: 'invalid', addedAt: 'not-number' as unknown as number },
+          { id: 'invalid', name: null, url: 'invalid', addedAt: 'not-number' },
         ],
       };
       
-      const result = importSources(exportData);
+      const result = importSources(exportData as unknown as ExportData);
       
       expect(result).toEqual([]);
     });
