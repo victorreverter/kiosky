@@ -3,19 +3,33 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { Plus, Settings2, Moon, Sun, Monitor, ShieldAlert, Search, X, Newspaper, Globe, Zap, FileUp } from "lucide-react";
 import { useLocalStorage } from "./hooks/useLocalStorage";
-import type { Source } from "./types";
+import type { Source, TabGroup } from "./types";
 import { SortableKioskCard } from "./components/SortableKioskCard";
 import { ComponentErrorBoundary } from "./components/ComponentErrorBoundary";
 import { cn, isValidHttpUrl } from "./lib/utils";
+import { TabBar } from "./components/TabBar";
 
 const AddSourceModal = lazy(() => import("./components/AddSourceModal").then(module => ({ default: module.AddSourceModal })));
 const ImportExportModal = lazy(() => import("./components/ImportExportModal").then(module => ({ default: module.ImportExportModal })));
+const AddTabModal = lazy(() => import("./components/AddTabModal").then(module => ({ default: module.AddTabModal })));
+const EditTabModal = lazy(() => import("./components/EditTabModal").then(module => ({ default: module.EditTabModal })));
 
 const DEFAULT_SOURCES: Source[] = [
-  { id: "1", name: "NY Times", url: "https://nytimes.com", addedAt: Date.now() },
-  { id: "2", name: "The Verge", url: "https://theverge.com", addedAt: Date.now() },
-  { id: "3", name: "Hacker News", url: "https://news.ycombinator.com", addedAt: Date.now() },
-  { id: "4", name: "TechCrunch", url: "https://techcrunch.com", addedAt: Date.now() },
+  { id: "1", name: "NY Times", url: "https://nytimes.com", addedAt: Date.now(), tabId: "uncategorized" },
+  { id: "2", name: "The Verge", url: "https://theverge.com", addedAt: Date.now(), tabId: "uncategorized" },
+  { id: "3", name: "Hacker News", url: "https://news.ycombinator.com", addedAt: Date.now(), tabId: "uncategorized" },
+  { id: "4", name: "TechCrunch", url: "https://techcrunch.com", addedAt: Date.now(), tabId: "uncategorized" },
+];
+
+const DEFAULT_TAB_GROUPS: TabGroup[] = [
+  {
+    id: "uncategorized",
+    name: "Uncategorized",
+    color: "gray",
+    icon: "📁",
+    createdAt: Date.now(),
+    isDefault: true,
+  },
 ];
 
 const THEME_ICONS = {
@@ -42,6 +56,11 @@ function App() {
   } = useLocalStorage<Source[]>("kiosky_sources", DEFAULT_SOURCES);
   
   const { 
+    storedValue: tabGroups, 
+    setValue: setTabGroups
+  } = useLocalStorage<TabGroup[]>("kiosky_tab_groups", DEFAULT_TAB_GROUPS);
+  
+  const { 
     storedValue: theme, 
     setValue: setTheme,
     error: themeError,
@@ -50,11 +69,28 @@ function App() {
   
   const [isEditMode, setIsEditMode] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isAddTabModalOpen, setIsAddTabModalOpen] = useState(false);
+  const [editingTab, setEditingTab] = useState<TabGroup | null>(null);
   const [editingSource, setEditingSource] = useState<Source | null>(null);
   const [isImportExportModalOpen, setIsImportExportModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeTabId, setActiveTabId] = useState<string>("all");
   const searchInputRef = useRef<HTMLInputElement>(null);
   
+  useEffect(() => {
+    if (tabGroups.length === 0) {
+      setTabGroups(DEFAULT_TAB_GROUPS);
+    }
+    
+    const sourcesNeedMigration = sources.some(s => !s.tabId);
+    if (sourcesNeedMigration) {
+      setSources(prev => prev.map(s => ({
+        ...s,
+        tabId: s.tabId || "uncategorized"
+      })));
+    }
+  }, []);
+
   // Apply theme class
   useEffect(() => {
     const root = window.document.documentElement;
@@ -98,6 +134,41 @@ function App() {
     setIsAddModalOpen(false);
   }, [setSources]);
 
+  const handleAddTab = useCallback((tab: TabGroup) => {
+    setTabGroups((prevTabs) => [...prevTabs, tab]);
+    setIsAddTabModalOpen(false);
+  }, [setTabGroups]);
+
+  const handleUpdateTab = useCallback((updatedTab: TabGroup) => {
+    setTabGroups((prevTabs) =>
+      prevTabs.map((t) => (t.id === updatedTab.id ? updatedTab : t))
+    );
+    setEditingTab(null);
+  }, [setTabGroups]);
+
+  const handleDeleteTab = useCallback((tabId: string) => {
+    const tabToDelete = tabGroups.find(t => t.id === tabId);
+    if (!tabToDelete || tabToDelete.isDefault) {
+      return;
+    }
+    
+    if (!window.confirm(`Delete "${tabToDelete.name}" tab? Sources will be moved to Uncategorized.`)) {
+      return;
+    }
+    
+    setSources((prevSources) =>
+      prevSources.map((s) =>
+        s.tabId === tabId ? { ...s, tabId: "uncategorized" } : s
+      )
+    );
+    
+    setTabGroups((prevTabs) => prevTabs.filter((t) => t.id !== tabId));
+    
+    if (activeTabId === tabId) {
+      setActiveTabId("all");
+    }
+  }, [tabGroups, activeTabId, setSources, setTabGroups]);
+
   const handleDeleteSource = useCallback((id: string) => {
     const sourceToDelete = sources.find(s => s.id === id);
     if (sourceToDelete && !window.confirm(`Delete "${sourceToDelete.name}"?`)) {
@@ -118,13 +189,21 @@ function App() {
     setEditingSource(null);
   }, [setSources]);
 
-  const handleImportSources = useCallback((importedSources: Source[]) => {
+  const handleImportSources = useCallback((importedSources: Source[], importedTabGroups?: TabGroup[]) => {
     setSources((prevSources) => {
       const existingIds = new Set(prevSources.map(s => s.id));
       const newSources = importedSources.filter(s => !existingIds.has(s.id));
       return [...prevSources, ...newSources];
     });
-  }, [setSources]);
+    
+    if (importedTabGroups && importedTabGroups.length > 0) {
+      setTabGroups((prevTabs) => {
+        const existingIds = new Set(prevTabs.map(t => t.id));
+        const newTabs = importedTabGroups.filter(t => !existingIds.has(t.id));
+        return [...prevTabs, ...newTabs];
+      });
+    }
+  }, [setSources, setTabGroups]);
 
   const handleClearSearch = useCallback(() => {
     setSearchQuery("");
@@ -181,14 +260,22 @@ function App() {
   const currentThemeIcon = useMemo(() => THEME_ICONS[theme], [theme]);
 
   const filteredSources = useMemo(() => {
-    if (!searchQuery.trim()) return sources;
+    let result = sources;
     
-    const query = searchQuery.toLowerCase().trim();
-    return sources.filter(source => 
-      source.name.toLowerCase().includes(query) ||
-      source.url.toLowerCase().includes(query)
-    );
-  }, [sources, searchQuery]);
+    if (activeTabId !== "all") {
+      result = result.filter(source => source.tabId === activeTabId);
+    }
+    
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter(source => 
+        source.name.toLowerCase().includes(query) ||
+        source.url.toLowerCase().includes(query)
+      );
+    }
+    
+    return result;
+  }, [sources, activeTabId, searchQuery]);
 
   return (
     <div className="min-h-screen bg-transparent p-6 md:p-12 lg:p-24 max-w-6xl mx-auto">
@@ -231,7 +318,7 @@ function App() {
         </div>
       ) : (
         <>
-        <header className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
+        <header className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-6">
           <div>
             <h1 className="text-4xl md:text-5xl font-black tracking-tight text-zinc-900 dark:text-white mb-2">Kiosky</h1>
             <p className="text-zinc-500 dark:text-zinc-400 font-medium">Your personal digital newsstand.</p>
@@ -294,6 +381,19 @@ function App() {
           </button>
         </div>
       </header>
+
+      <Suspense fallback={<ModalLoadingSpinner />}>
+        <TabBar
+          tabGroups={tabGroups}
+          sources={sources}
+          activeTabId={activeTabId}
+          onTabChange={setActiveTabId}
+          onAddTab={() => setIsAddTabModalOpen(true)}
+          onEditTab={(tab) => setEditingTab(tab)}
+          onDeleteTab={handleDeleteTab}
+          isEditMode={isEditMode}
+        />
+      </Suspense>
 
       <main>
         {isEditMode && (
@@ -462,6 +562,8 @@ function App() {
               onClose={() => setIsAddModalOpen(false)}
               onAdd={handleAddSource}
               existingSources={sources}
+              tabGroups={tabGroups}
+              activeTabId={activeTabId === "all" ? "uncategorized" : activeTabId}
             />
           </ComponentErrorBoundary>
         </Suspense>
@@ -475,6 +577,32 @@ function App() {
               onEdit={handleUpdateSource}
               editSource={editingSource}
               existingSources={sources}
+              tabGroups={tabGroups}
+            />
+          </ComponentErrorBoundary>
+        </Suspense>
+      )}
+
+      {isAddTabModalOpen && (
+        <Suspense fallback={<ModalLoadingSpinner />}>
+          <ComponentErrorBoundary name="AddTabModal">
+            <AddTabModal
+              onClose={() => setIsAddTabModalOpen(false)}
+              onAdd={handleAddTab}
+              existingTabs={tabGroups}
+            />
+          </ComponentErrorBoundary>
+        </Suspense>
+      )}
+
+      {editingTab && (
+        <Suspense fallback={<ModalLoadingSpinner />}>
+          <ComponentErrorBoundary name="EditTabModal">
+            <EditTabModal
+              onClose={() => setEditingTab(null)}
+              onUpdate={handleUpdateTab}
+              existingTabs={tabGroups}
+              editTab={editingTab}
             />
           </ComponentErrorBoundary>
         </Suspense>
@@ -486,6 +614,7 @@ function App() {
             <ImportExportModal
               onClose={() => setIsImportExportModalOpen(false)}
               sources={sources}
+              tabGroups={tabGroups}
               onImport={handleImportSources}
             />
           </ComponentErrorBoundary>

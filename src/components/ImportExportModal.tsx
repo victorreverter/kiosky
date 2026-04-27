@@ -1,20 +1,21 @@
 import { useRef, useState } from "react";
 import { X, Download, Upload, AlertCircle } from "lucide-react";
 import { exportSources, importSources, downloadExportFile, parseImportFile, type ExportData } from "../lib/importExport";
-import type { Source } from "../types";
+import type { Source, TabGroup } from "../types";
 
 interface ImportExportModalProps {
   onClose: () => void;
   sources: Source[];
-  onImport: (sources: Source[]) => void;
+  tabGroups?: TabGroup[];
+  onImport: (sources: Source[], tabGroups?: TabGroup[]) => void;
 }
 
-export function ImportExportModal({ onClose, sources, onImport }: ImportExportModalProps) {
+export function ImportExportModal({ onClose, sources, tabGroups, onImport }: ImportExportModalProps) {
   const [importError, setImportError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleExport = () => {
-    const data = exportSources(sources);
+    const data = exportSources(sources, tabGroups);
     downloadExportFile(data);
   };
 
@@ -28,13 +29,13 @@ export function ImportExportModal({ onClose, sources, onImport }: ImportExportMo
 
     try {
       const data = await parseImportFile(file);
-      const importedSources = importSources(data as ExportData);
+      const result = importSources(data as ExportData);
       
-      if (importedSources.length === 0) {
+      if (result.sources.length === 0) {
         setImportError("No valid sources found in file");
       } else {
         setImportError(null);
-        onImport(importedSources);
+        onImport(result.sources, result.tabGroups);
         onClose();
       }
     } catch (error) {
