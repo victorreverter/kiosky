@@ -1,6 +1,5 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical } from "lucide-react";
 import { KioskCard as KioskCardBase } from "./KioskCard";
 import type { Source } from "../types";
 
@@ -19,7 +18,7 @@ export function SortableKioskCard({ source, isEditMode, onDelete, onEdit }: Sort
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: source.id, disabled: !isEditMode });
+  } = useSortable({ id: source.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -29,18 +28,7 @@ export function SortableKioskCard({ source, isEditMode, onDelete, onEdit }: Sort
 
   return (
     <div ref={setNodeRef} style={style} className={isDragging ? "z-50" : ""}>
-      <div className="relative">
-        {isEditMode && (
-          <button
-            {...attributes}
-            {...listeners}
-            className="absolute -top-2 -left-2 z-10 p-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-lg cursor-grab active:cursor-grabbing transition-colors"
-            aria-label="Drag to reorder"
-            type="button"
-          >
-            <GripVertical size={16} />
-          </button>
-        )}
+      <div className="relative" {...attributes} {...listeners}>
         <KioskCardBase
           source={source}
           isEditMode={isEditMode}

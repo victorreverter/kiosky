@@ -91,20 +91,26 @@ function App() {
     }
   }, []);
 
-  // Apply theme class
+  const getEffectiveTheme = useCallback(() => {
+    if (theme === "system") {
+      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+    return theme;
+  }, [theme]);
+
   useEffect(() => {
     const root = window.document.documentElement;
     root.classList.remove("light", "dark");
     
-    if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-      root.classList.add(systemTheme);
-    } else {
-      root.classList.add(theme);
+    const effectiveTheme = getEffectiveTheme();
+    root.classList.add(effectiveTheme);
+    
+    const faviconLink = document.getElementById("dynamic-favicon") as HTMLLinkElement;
+    if (faviconLink) {
+      faviconLink.href = effectiveTheme === "dark" ? "./Favicon_Dark.png" : "./Favicon_Light.png";
     }
-  }, [theme]);
+  }, [theme, getEffectiveTheme]);
 
-  // Listen for system theme changes
   useEffect(() => {
     if (theme !== "system") return;
     
@@ -113,6 +119,11 @@ function App() {
       const root = window.document.documentElement;
       root.classList.remove("light", "dark");
       root.classList.add(e.matches ? "dark" : "light");
+      
+      const faviconLink = document.getElementById("dynamic-favicon") as HTMLLinkElement;
+      if (faviconLink) {
+        faviconLink.href = e.matches ? "./Favicon_Dark.png" : "./Favicon_Light.png";
+      }
     };
     
     mediaQuery.addEventListener("change", handleChange);
@@ -230,7 +241,8 @@ function App() {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
+        delay: 150,
+        tolerance: 5,
       },
     }),
     useSensor(KeyboardSensor, {
@@ -319,10 +331,12 @@ function App() {
       ) : (
         <>
         <header className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-6">
-          <div>
-            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-zinc-900 dark:text-white mb-2">Kiosky</h1>
-            <p className="text-zinc-500 dark:text-zinc-400 font-medium">Your personal digital newsstand.</p>
-          </div>
+          <img
+            key={getEffectiveTheme()}
+            src={getEffectiveTheme() === "dark" ? "./Kiosky_Logo_Dark.png" : "./Kiosky_Logo_Light.png"}
+            alt="Kiosky"
+            className="h-16 md:h-20 w-auto object-contain"
+          />
         
         <div className="flex items-center gap-3">
           <div className="relative">

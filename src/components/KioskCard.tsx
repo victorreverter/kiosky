@@ -104,7 +104,7 @@ export const KioskCard = memo(function KioskCard({ source, isEditMode, onDelete,
     <div
       className={cn(
         "group relative flex flex-col items-center justify-center rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden",
-        isEditMode ? "animate-pulse-subtle cursor-default" : "cursor-pointer"
+        isEditMode ? "animate-pulse-subtle" : "cursor-pointer"
       )}
       onClick={handleClick}
       onKeyDown={(e) => {
