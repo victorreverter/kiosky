@@ -140,7 +140,7 @@ describe('AddSourceModal', () => {
   it('should prevent adding duplicate URLs', async () => {
     const user = userEvent.setup();
     const existingSources = [
-      { id: '1', name: 'Example', url: 'https://example.com', addedAt: Date.now() },
+      { id: '1', name: 'Example', url: 'https://example.com', addedAt: Date.now(), tabId: 'uncategorized' },
     ];
     
     render(
@@ -162,7 +162,7 @@ describe('AddSourceModal', () => {
   it('should detect duplicate URLs with different protocols', async () => {
     const user = userEvent.setup();
     const existingSources = [
-      { id: '1', name: 'Example', url: 'https://example.com', addedAt: Date.now() },
+      { id: '1', name: 'Example', url: 'https://example.com', addedAt: Date.now(), tabId: 'uncategorized' },
     ];
     
     render(
@@ -183,7 +183,7 @@ describe('AddSourceModal', () => {
   it('should detect duplicate URLs with trailing slash', async () => {
     const user = userEvent.setup();
     const existingSources = [
-      { id: '1', name: 'Example', url: 'https://example.com', addedAt: Date.now() },
+      { id: '1', name: 'Example', url: 'https://example.com', addedAt: Date.now(), tabId: 'uncategorized' },
     ];
     
     render(
@@ -204,7 +204,7 @@ describe('AddSourceModal', () => {
   it('should allow adding URLs with different paths', async () => {
     const user = userEvent.setup();
     const existingSources = [
-      { id: '1', name: 'Example', url: 'https://example.com/news', addedAt: Date.now() },
+      { id: '1', name: 'Example', url: 'https://example.com/news', addedAt: Date.now(), tabId: 'uncategorized' },
     ];
     
     render(
@@ -227,7 +227,8 @@ describe('AddSourceModal', () => {
       id: '1', 
       name: 'Existing Site', 
       url: 'https://existing.com', 
-      addedAt: Date.now() 
+      addedAt: Date.now(),
+      tabId: 'uncategorized'
     };
     
     render(
@@ -250,7 +251,8 @@ describe('AddSourceModal', () => {
       id: '1', 
       name: 'Existing Site', 
       url: 'https://existing.com', 
-      addedAt: Date.now() 
+      addedAt: Date.now(),
+      tabId: 'uncategorized'
     };
     const mockOnEdit = vi.fn();
     
@@ -277,7 +279,8 @@ describe('AddSourceModal', () => {
       id: '1', 
       name: 'Example', 
       url: 'https://example.com', 
-      addedAt: Date.now() 
+      addedAt: Date.now(),
+      tabId: 'uncategorized'
     };
     const existingSources = [editSource];
     const mockOnEdit = vi.fn();

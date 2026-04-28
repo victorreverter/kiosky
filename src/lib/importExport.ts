@@ -1,32 +1,49 @@
-import { Source } from "../types";
+import { Source, TabGroup } from "../types";
 
 export interface ExportData {
   version: string;
   exportedAt: number;
   sources: Source[];
+  tabGroups?: TabGroup[];
 }
 
-export function exportSources(sources: Source[]): ExportData {
+export function exportSources(sources: Source[], tabGroups?: TabGroup[]): ExportData {
   return {
-    version: "1.0",
+    version: "2.0",
     exportedAt: Date.now(),
     sources,
+    ...(tabGroups ? { tabGroups } : {}),
   };
 }
 
-export function importSources(data: ExportData): Source[] {
+export function importSources(data: ExportData): { sources: Source[]; tabGroups?: TabGroup[] } {
   if (!data || !Array.isArray(data.sources)) {
     throw new Error("Invalid import data format");
   }
 
-  return data.sources.filter((source) => {
+  const sources = data.sources.filter((source) => {
     return (
       typeof source.id === "string" &&
       typeof source.name === "string" &&
       typeof source.url === "string" &&
       typeof source.addedAt === "number"
     );
+  }).map(source => ({
+    ...source,
+    tabId: source.tabId || "uncategorized",
+  }));
+
+  const tabGroups = data.tabGroups?.filter((tab) => {
+    return (
+      typeof tab.id === "string" &&
+      typeof tab.name === "string" &&
+      typeof tab.color === "string" &&
+      typeof tab.icon === "string" &&
+      typeof tab.createdAt === "number"
+    );
   });
+
+  return { sources, tabGroups };
 }
 
 export function downloadExportFile(data: ExportData, filename: string = "kiosky-sources.json"): void {

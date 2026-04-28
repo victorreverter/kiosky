@@ -4,15 +4,15 @@ import type { ExportData } from '../lib/importExport';
 
 describe('importExport', () => {
   const mockSources: Source[] = [
-    { id: '1', name: 'Test Site', url: 'https://example.com', addedAt: 1234567890 },
-    { id: '2', name: 'Another Site', url: 'https://another.com', addedAt: 1234567891 },
+    { id: '1', name: 'Test Site', url: 'https://example.com', addedAt: 1234567890, tabId: 'uncategorized' },
+    { id: '2', name: 'Another Site', url: 'https://another.com', addedAt: 1234567891, tabId: 'uncategorized' },
   ];
 
   describe('exportSources', () => {
     it('should export sources with metadata', () => {
       const result = exportSources(mockSources);
       
-      expect(result.version).toBe('1.0');
+      expect(result.version).toBe('2.0');
       expect(result.exportedAt).toBeGreaterThan(0);
       expect(result.sources).toEqual(mockSources);
     });
@@ -20,7 +20,7 @@ describe('importExport', () => {
     it('should handle empty sources array', () => {
       const result = exportSources([]);
       
-      expect(result.version).toBe('1.0');
+      expect(result.version).toBe('2.0');
       expect(result.sources).toEqual([]);
     });
   });
@@ -28,32 +28,32 @@ describe('importExport', () => {
   describe('importSources', () => {
     it('should import valid sources', () => {
       const exportData = {
-        version: '1.0',
+        version: '2.0',
         exportedAt: Date.now(),
         sources: mockSources,
       };
       
       const result = importSources(exportData);
       
-      expect(result).toEqual(mockSources);
+      expect(result.sources).toEqual(mockSources);
     });
 
     it('should filter out invalid sources', () => {
       const exportData = {
-        version: '1.0',
+        version: '2.0',
         exportedAt: Date.now(),
         sources: [
-          { id: '1', name: 'Valid', url: 'https://valid.com', addedAt: 123 },
-          { id: '2', url: 'https://invalid.com', addedAt: 123 }, // missing name
-          { id: '3', name: 'Valid2', url: 'https://valid2.com', addedAt: 456 },
+          { id: '1', name: 'Valid', url: 'https://valid.com', addedAt: 123, tabId: 'uncategorized' },
+          { id: '2', url: 'https://invalid.com', addedAt: 123, tabId: 'uncategorized' }, // missing name
+          { id: '3', name: 'Valid2', url: 'https://valid2.com', addedAt: 456, tabId: 'uncategorized' },
         ],
       };
       
       const result = importSources(exportData as ExportData);
       
-      expect(result).toHaveLength(2);
-      expect(result[0].id).toBe('1');
-      expect(result[1].id).toBe('3');
+      expect(result.sources).toHaveLength(2);
+      expect(result.sources[0].id).toBe('1');
+      expect(result.sources[1].id).toBe('3');
     });
 
     it('should throw error for invalid data format', () => {
@@ -66,13 +66,13 @@ describe('importExport', () => {
         version: '1.0',
         exportedAt: Date.now(),
         sources: [
-          { id: 'invalid', name: null, url: 'invalid', addedAt: 'not-number' },
+          { id: 'invalid', name: null, url: 'invalid', addedAt: 'not-number', tabId: 'uncategorized' },
         ],
       };
       
       const result = importSources(exportData as unknown as ExportData);
       
-      expect(result).toEqual([]);
+      expect(result.sources).toEqual([]);
     });
   });
 });

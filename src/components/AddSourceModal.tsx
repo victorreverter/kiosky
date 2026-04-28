@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
-import { X, AlertCircle, Loader2, Clock } from "lucide-react";
+import { X, AlertCircle, Loader2, Clock, ChevronDown } from "lucide-react";
 import { generateId, isValidHttpUrl, cn } from "../lib/utils";
-import type { Source } from "../types";
+import type { Source, TabGroup } from "../types";
 
 interface AddSourceModalProps {
   onClose: () => void;
@@ -9,6 +9,8 @@ interface AddSourceModalProps {
   onEdit?: (source: Source) => void;
   existingSources?: Source[];
   editSource?: Source | null;
+  tabGroups?: TabGroup[];
+  activeTabId?: string;
 }
 
 const MAX_NAME_LENGTH = 50;
@@ -27,9 +29,10 @@ function normalizeUrl(url: string): string {
   }
 }
 
-export function AddSourceModal({ onClose, onAdd, onEdit, existingSources = [], editSource = null }: AddSourceModalProps) {
+export function AddSourceModal({ onClose, onAdd, onEdit, existingSources = [], editSource = null, tabGroups = [], activeTabId = "uncategorized" }: AddSourceModalProps) {
   const [name, setName] = useState(editSource?.name ?? "");
   const [url, setUrl] = useState(editSource?.url ?? "");
+  const [selectedTabId, setSelectedTabId] = useState(editSource?.tabId ?? activeTabId);
   const [urlError, setUrlError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastSubmissionTime, setLastSubmissionTime] = useState<number>(0);
@@ -37,6 +40,8 @@ export function AddSourceModal({ onClose, onAdd, onEdit, existingSources = [], e
   const modalRef = useRef<HTMLDivElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const [showTabDropdown, setShowTabDropdown] = useState(false);
+  const tabDropdownRef = useRef<HTMLDivElement>(null);
 
   const timeSinceLastSubmission = currentTime - lastSubmissionTime;
   const isRateLimited = timeSinceLastSubmission < RATE_LIMIT_COOLDOWN;
@@ -98,6 +103,17 @@ export function AddSourceModal({ onClose, onAdd, onEdit, existingSources = [], e
   // Focus first input on mount
   useEffect(() => {
     nameInputRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (tabDropdownRef.current && !tabDropdownRef.current.contains(e.target as Node)) {
+        setShowTabDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // Lock body scroll when modal is open
@@ -163,6 +179,7 @@ export function AddSourceModal({ onClose, onAdd, onEdit, existingSources = [], e
         ...editSource,
         name: name.trim(),
         url: finalUrl,
+        tabId: selectedTabId,
       });
     } else if (onAdd) {
       onAdd({
@@ -170,6 +187,7 @@ export function AddSourceModal({ onClose, onAdd, onEdit, existingSources = [], e
         name: name.trim(),
         url: finalUrl,
         addedAt: Date.now(),
+        tabId: selectedTabId,
       });
     }
     
@@ -275,6 +293,69 @@ export function AddSourceModal({ onClose, onAdd, onEdit, existingSources = [], e
               </div>
             )}
           </div>
+
+          {tabGroups.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                Tab
+              </label>
+              <div className="relative" ref={tabDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setShowTabDropdown(!showTabDropdown)}
+                  className="w-full px-4 py-3 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:text-zinc-100 transition-shadow transition-colors flex items-center justify-between"
+                  aria-haspopup="listbox"
+                  aria-expanded={showTabDropdown}
+                >
+                  <span className="flex items-center gap-2">
+                    {(() => {
+                      const tab = [...tabGroups].find(t => t.id === selectedTabId);
+                      if (tab) {
+                        return (
+                          <>
+                            <span className="text-lg">{tab.icon}</span>
+                            <span>{tab.name}</span>
+                          </>
+                        );
+                      }
+                      return <span>Uncategorized</span>;
+                    })()}
+                  </span>
+                  <ChevronDown size={16} className={cn("text-zinc-400 transition-transform", showTabDropdown && "rotate-180")} />
+                </button>
+
+                {showTabDropdown && (
+                  <div
+                    className="absolute z-20 w-full mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-lg max-h-60 overflow-y-auto"
+                    role="listbox"
+                  >
+                    {tabGroups.map((tab) => (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedTabId(tab.id);
+                          setShowTabDropdown(false);
+                        }}
+                        className={cn(
+                          "w-full px-4 py-3 flex items-center gap-3 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors",
+                          selectedTabId === tab.id ? "bg-blue-50 dark:bg-blue-900/20" : ""
+                        )}
+                        role="option"
+                        aria-selected={selectedTabId === tab.id}
+                      >
+                        <span className="text-lg">{tab.icon}</span>
+                        <span className="flex-1 text-left text-zinc-700 dark:text-zinc-200">{tab.name}</span>
+                        {selectedTabId === tab.id && (
+                          <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="pt-4 flex justify-end gap-3">
             <button
