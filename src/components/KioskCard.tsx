@@ -2,6 +2,11 @@ import { memo, useCallback, useState, useEffect, useMemo } from "react";
 import { ExternalLink, Trash2, Edit2, Loader2 } from "lucide-react";
 import type { Source } from "../types";
 import { cn, getFaviconUrl, isValidHttpUrl } from "../lib/utils";
+// ==============================================================
+// KioskCard Component
+// ==============================================================
+// A card component for displaying a source with its favicon, name, and edit/delete actions.
+// Supports responsive design and keyboard navigation.  
 
 interface KioskCardProps {
   source: Source;
