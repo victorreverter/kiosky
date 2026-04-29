@@ -89,7 +89,7 @@ function App() {
         tabId: s.tabId || "uncategorized"
       })));
     }
-  }, []);
+  }, [sources, tabGroups.length, setSources, setTabGroups]);
 
   const getEffectiveTheme = useCallback(() => {
     if (theme === "system") {
@@ -138,7 +138,7 @@ function App() {
 
   const handleAddSource = useCallback((source: Source) => {
     if (!isValidHttpUrl(source.url)) {
-      console.error("Attempted to add invalid URL:", source.url);
+      alert("Invalid URL. Please enter a valid HTTP or HTTPS URL.");
       return;
     }
     setSources((prevSources) => [...prevSources, source]);
@@ -229,8 +229,15 @@ function App() {
         const oldIndex = items.findIndex((item) => item.id === active.id);
         const newIndex = items.findIndex((item) => item.id === over.id);
         
+        if (oldIndex === -1 || newIndex === -1) {
+          return items;
+        }
+        
         const newItems = [...items];
-        const [removed] = newItems.splice(oldIndex, 1);
+        const removed = newItems.splice(oldIndex, 1)[0];
+        if (!removed) {
+          return items;
+        }
         newItems.splice(newIndex, 0, removed);
         
         return newItems;
@@ -266,10 +273,6 @@ function App() {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [searchQuery, isModalOpen, handleClearSearch]);
-
-
-
-  const currentThemeIcon = useMemo(() => THEME_ICONS[theme], [theme]);
 
   const filteredSources = useMemo(() => {
     let result = sources;
@@ -368,7 +371,7 @@ function App() {
             aria-label={`Toggle theme (current: ${theme})`}
             type="button"
           >
-            {currentThemeIcon}
+            {THEME_ICONS[theme]}
           </button>
           
           <button

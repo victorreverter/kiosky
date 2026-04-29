@@ -52,8 +52,8 @@ describe('importExport', () => {
       const result = importSources(exportData as ExportData);
       
       expect(result.sources).toHaveLength(2);
-      expect(result.sources[0].id).toBe('1');
-      expect(result.sources[1].id).toBe('3');
+      expect(result.sources[0]?.id).toBe('1');
+      expect(result.sources[1]?.id).toBe('3');
     });
 
     it('should throw error for invalid data format', () => {

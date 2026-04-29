@@ -56,7 +56,7 @@ export const KioskCard = memo(function KioskCard({ source, isEditMode, onDelete,
     if (isEditMode) return;
     
     if (!isValidHttpUrl(source.url)) {
-      console.warn("Invalid URL prevented from opening:", source.url);
+      alert("This source has an invalid URL and cannot be opened.");
       return;
     }
     
