@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from "react";
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { DndContext, DragOverlay, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { Plus, Settings2, Moon, Sun, Monitor, ShieldAlert, Search, X, Newspaper, Globe, Zap, FileUp } from "lucide-react";
 import { useLocalStorage } from "./hooks/useLocalStorage";
@@ -75,6 +75,7 @@ function App() {
   const [isImportExportModalOpen, setIsImportExportModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTabId, setActiveTabId] = useState<string>("all");
+  const [activeId, setActiveId] = useState<string | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   
   useEffect(() => {
@@ -243,13 +244,19 @@ function App() {
         return newItems;
       });
     }
+    
+    setActiveId(null);
   }, [setSources]);
+
+  const handleDragStart = useCallback((event: { active: { id: string | number } }) => {
+    setActiveId(String(event.active.id));
+  }, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        delay: 150,
-        tolerance: 5,
+        delay: 100,
+        tolerance: 10,
       },
     }),
     useSensor(KeyboardSensor, {
@@ -530,6 +537,7 @@ function App() {
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           >
             <div 
@@ -551,10 +559,26 @@ function App() {
                 </ComponentErrorBoundary>
               ))}
               
+              <DragOverlay>
+                {activeId && (
+                  <div className="scale-105 rotate-2 shadow-2xl">
+                    <SortableKioskCard
+                      source={sources.find(s => s.id === activeId)!}
+                      isEditMode={isEditMode}
+                      onDelete={handleDeleteSource}
+                      onEdit={handleEditSource}
+                    />
+                  </div>
+                )}
+              </DragOverlay>
+              
               {isEditMode && (
                 <button
                   onClick={() => setIsAddModalOpen(true)}
-                  className="flex flex-col items-center justify-center rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border-2 border-dashed border-zinc-200 dark:border-zinc-800 h-[100px] md:h-[130px] hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors group"
+                  className={cn(
+                    "flex flex-col items-center justify-center rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border-2 border-dashed border-zinc-200 dark:border-zinc-800 h-[100px] md:h-[130px] hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors group",
+                    activeId && "scale-95 transition-transform duration-200"
+                  )}
                   aria-label="Add new source"
                   type="button"
                   role="listitem"
