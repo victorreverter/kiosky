@@ -108,7 +108,7 @@ export const KioskCard = memo(function KioskCard({ source, isEditMode, onDelete,
   return (
     <div
       className={cn(
-        "group relative flex flex-col items-center justify-center rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden",
+        "group relative flex flex-col items-center justify-center rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-3 md:p-4 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden",
         isEditMode ? "animate-pulse-subtle" : "cursor-pointer"
       )}
       onClick={handleClick}
@@ -122,7 +122,6 @@ export const KioskCard = memo(function KioskCard({ source, isEditMode, onDelete,
       aria-posinset={index !== undefined ? index + 1 : undefined}
       aria-setsize={totalItems}
     >
-      {/* Edit and Delete buttons in edit mode */}
       {isEditMode && (
         <>
           <button
@@ -150,37 +149,36 @@ export const KioskCard = memo(function KioskCard({ source, isEditMode, onDelete,
         </>
       )}
 
-      {/* External link indicator */}
       {!isEditMode && (
-        <div className="absolute top-3 right-3 text-zinc-300 dark:text-zinc-700 opacity-0 group-hover:opacity-100 transition-opacity">
-          <ExternalLink size={16} />
+        <div className="absolute top-2 right-2 text-zinc-300 dark:text-zinc-700 opacity-0 group-hover:opacity-100 transition-opacity">
+          <ExternalLink size={14} />
         </div>
       )}
 
-      <div className="w-16 h-16 mb-4 flex items-center justify-center rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700/50 shadow-inner overflow-hidden">
+      <div className="w-12 h-12 md:w-14 md:h-14 mb-2 md:mb-3 flex items-center justify-center rounded-lg bg-zinc-50 dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700/50 shadow-inner overflow-hidden">
         {faviconUrl && !faviconFailed ? (
           <>
             {faviconLoading && (
               <div className="absolute inset-0 flex items-center justify-center">
-                <Loader2 className="animate-spin text-zinc-400 dark:text-zinc-500" size={20} />
+                <Loader2 className="animate-spin text-zinc-400 dark:text-zinc-500" size={16} />
               </div>
             )}
             <img
               src={faviconUrl}
               alt={`${source.name} icon`}
-              className={cn("w-10 h-10 object-contain drop-shadow-sm transition-opacity duration-200", faviconLoading ? "opacity-0" : "opacity-100")}
+              className={cn("w-8 h-8 md:w-9 md:h-9 object-contain drop-shadow-sm transition-opacity duration-200", faviconLoading ? "opacity-0" : "opacity-100")}
               onError={() => setFaviconFailed(true)}
               onLoad={() => setFaviconLoading(false)}
               loading="lazy"
             />
           </>
         ) : null}
-        <div className={cn("text-2xl font-semibold text-zinc-400 dark:text-zinc-500 uppercase", (!faviconUrl || faviconFailed) ? "block" : "hidden")}>
+        <div className={cn("text-lg md:text-xl font-semibold text-zinc-400 dark:text-zinc-500 uppercase", (!faviconUrl || faviconFailed) ? "block" : "hidden")}>
           {source.name.charAt(0)}
         </div>
       </div>
 
-      <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-200 text-center truncate w-full">
+      <h3 className="text-xs md:text-sm font-medium text-zinc-700 dark:text-zinc-200 text-center truncate w-full">
         {source.name}
       </h3>
     </div>

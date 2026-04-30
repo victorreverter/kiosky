@@ -23,12 +23,16 @@ export function SortableKioskCard({ source, isEditMode, onDelete, onEdit }: Sort
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.6 : 1,
   };
 
   return (
     <div ref={setNodeRef} style={style} className={isDragging ? "z-50" : ""}>
-      <div className="relative" {...attributes} {...listeners}>
+      <div 
+        className={`relative transition-all duration-200 ${isDragging ? 'animate-dragging shadow-xl' : ''}`}
+        {...attributes} 
+        {...listeners}
+      >
         <KioskCardBase
           source={source}
           isEditMode={isEditMode}
