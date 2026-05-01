@@ -29,7 +29,7 @@ function normalizeUrl(url: string): string {
   }
 }
 
-export function AddSourceModal({ onClose, onAdd, onEdit, existingSources = [], editSource = null, tabGroups = [], activeTabId = "uncategorized" }: AddSourceModalProps) {
+export function AddSourceModal({ onClose, onAdd, onEdit, existingSources = [], editSource = null, tabGroups = [], activeTabId = "" }: AddSourceModalProps) {
   const [name, setName] = useState(editSource?.name ?? "");
   const [url, setUrl] = useState(editSource?.url ?? "");
   const [selectedTabId, setSelectedTabId] = useState(editSource?.tabId ?? activeTabId);
@@ -318,7 +318,7 @@ export function AddSourceModal({ onClose, onAdd, onEdit, existingSources = [], e
                           </>
                         );
                       }
-                      return <span>Uncategorized</span>;
+                      return <span>No tab</span>;
                     })()}
                   </span>
                   <ChevronDown size={16} className={cn("text-zinc-400 transition-transform", showTabDropdown && "rotate-180")} />

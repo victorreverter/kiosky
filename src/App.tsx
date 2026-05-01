@@ -15,22 +15,13 @@ const AddTabModal = lazy(() => import("./components/AddTabModal").then(module =>
 const EditTabModal = lazy(() => import("./components/EditTabModal").then(module => ({ default: module.EditTabModal })));
 
 const DEFAULT_SOURCES: Source[] = [
-  { id: "1", name: "NY Times", url: "https://nytimes.com", addedAt: Date.now(), tabId: "uncategorized" },
-  { id: "2", name: "The Verge", url: "https://theverge.com", addedAt: Date.now(), tabId: "uncategorized" },
-  { id: "3", name: "Hacker News", url: "https://news.ycombinator.com", addedAt: Date.now(), tabId: "uncategorized" },
-  { id: "4", name: "TechCrunch", url: "https://techcrunch.com", addedAt: Date.now(), tabId: "uncategorized" },
+  { id: "1", name: "NY Times", url: "https://nytimes.com", addedAt: Date.now(), tabId: "" },
+  { id: "2", name: "The Verge", url: "https://theverge.com", addedAt: Date.now(), tabId: "" },
+  { id: "3", name: "Hacker News", url: "https://news.ycombinator.com", addedAt: Date.now(), tabId: "" },
+  { id: "4", name: "TechCrunch", url: "https://techcrunch.com", addedAt: Date.now(), tabId: "" },
 ];
 
-const DEFAULT_TAB_GROUPS: TabGroup[] = [
-  {
-    id: "uncategorized",
-    name: "Uncategorized",
-    color: "gray",
-    icon: "📁",
-    createdAt: Date.now(),
-    isDefault: true,
-  },
-];
+const DEFAULT_TAB_GROUPS: TabGroup[] = [];
 
 const THEME_ICONS = {
   light: <Sun size={20} />,
@@ -79,18 +70,14 @@ function App() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   
   useEffect(() => {
-    if (tabGroups.length === 0) {
-      setTabGroups(DEFAULT_TAB_GROUPS);
-    }
-    
-    const sourcesNeedMigration = sources.some(s => !s.tabId);
+    const sourcesNeedMigration = sources.some(s => s.tabId === undefined || s.tabId === "uncategorized");
     if (sourcesNeedMigration) {
       setSources(prev => prev.map(s => ({
         ...s,
-        tabId: s.tabId || "uncategorized"
+        tabId: (s.tabId === undefined || s.tabId === "uncategorized") ? "" : s.tabId
       })));
     }
-  }, [sources, tabGroups.length, setSources, setTabGroups]);
+  }, [sources, setSources]);
 
   const getEffectiveTheme = useCallback(() => {
     if (theme === "system") {
@@ -164,13 +151,13 @@ function App() {
       return;
     }
     
-    if (!window.confirm(`Delete "${tabToDelete.name}" tab? Sources will be moved to Uncategorized.`)) {
+    if (!window.confirm(`Delete "${tabToDelete.name}" tab? Sources will remain in "All Sources".`)) {
       return;
     }
     
     setSources((prevSources) =>
       prevSources.map((s) =>
-        s.tabId === tabId ? { ...s, tabId: "uncategorized" } : s
+        s.tabId === tabId ? { ...s, tabId: "" } : s
       )
     );
     
@@ -602,7 +589,7 @@ function App() {
               onAdd={handleAddSource}
               existingSources={sources}
               tabGroups={tabGroups}
-              activeTabId={activeTabId === "all" ? "uncategorized" : activeTabId}
+              activeTabId={activeTabId === "all" ? "" : activeTabId}
             />
           </ComponentErrorBoundary>
         </Suspense>

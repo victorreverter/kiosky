@@ -30,7 +30,7 @@ export function importSources(data: ExportData): { sources: Source[]; tabGroups?
     );
   }).map(source => ({
     ...source,
-    tabId: source.tabId || "uncategorized",
+    tabId: source.tabId || "",
   }));
 
   const tabGroups = data.tabGroups?.filter((tab) => {
