@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { X, AlertCircle } from "lucide-react";
 import { cn } from "../lib/utils";
+import { FLAG_ICONS, CATEGORY_ICONS } from "../constants/icons";
 import type { TabGroup, TabColor } from "../types";
 
 interface EditTabModalProps {
@@ -59,51 +60,6 @@ const TAB_COLOR_DETAILS = {
     light: "bg-gray-50 dark:bg-gray-900/20",
   },
 };
-
-const FLAG_ICONS = [
-  { icon: '🇺🇸', label: 'USA' },
-  { icon: '🇬🇧', label: 'UK' },
-  { icon: '🇳🇱', label: 'Netherlands' },
-  { icon: '🇩🇪', label: 'Germany' },
-  { icon: '🇫🇷', label: 'France' },
-  { icon: '🇪🇸', label: 'Spain' },
-  { icon: '🇮🇹', label: 'Italy' },
-  { icon: '🇯🇵', label: 'Japan' },
-  { icon: '🇰🇷', label: 'Korea' },
-  { icon: '🇨🇳', label: 'China' },
-  { icon: '🇮🇳', label: 'India' },
-  { icon: '🇧🇷', label: 'Brazil' },
-  { icon: '🇦🇺', label: 'Australia' },
-  { icon: '🇨🇦', label: 'Canada' },
-];
-
-const CATEGORY_ICONS = [
-  { icon: '📰', label: 'News' },
-  { icon: '🗞️', label: 'Newspaper' },
-  { icon: '💻', label: 'Technology' },
-  { icon: '🖥️', label: 'Computer' },
-  { icon: '⌨️', label: 'Keyboard' },
-  { icon: '🔧', label: 'Tools' },
-  { icon: '⚙️', label: 'Settings' },
-  { icon: '🌍', label: 'World' },
-  { icon: '📚', label: 'Education' },
-  { icon: '🎮', label: 'Gaming' },
-  { icon: '🎬', label: 'Movies' },
-  { icon: '🛒', label: 'Shopping' },
-  { icon: '🏦', label: 'Finance' },
-  { icon: '⚕️', label: 'Health' },
-  { icon: '🎵', label: 'Music' },
-  { icon: '✈️', label: 'Travel' },
-  { icon: '🍳', label: 'Food' },
-  { icon: '⚽', label: 'Sports' },
-  { icon: '🏠', label: 'Home' },
-  { icon: '📧', label: 'Email' },
-  { icon: '💬', label: 'Social' },
-  { icon: '📹', label: 'Video' },
-  { icon: '📸', label: 'Photos' },
-  { icon: '🎨', label: 'Art' },
-  { icon: '📖', label: 'Books' },
-];
 
 const MAX_NAME_LENGTH = 30;
 
