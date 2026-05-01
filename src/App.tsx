@@ -77,7 +77,12 @@ function App() {
         tabId: (s.tabId === undefined || s.tabId === "uncategorized") ? "" : s.tabId
       })));
     }
-  }, [sources, setSources]);
+
+    const hasUncategorizedTab = tabGroups.some(t => t.id === "uncategorized");
+    if (hasUncategorizedTab) {
+      setTabGroups(prev => prev.filter(t => t.id !== "uncategorized"));
+    }
+  }, [sources, tabGroups, setSources, setTabGroups]);
 
   const getEffectiveTheme = useCallback(() => {
     if (theme === "system") {
