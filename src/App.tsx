@@ -575,7 +575,7 @@ function App() {
               <button
                 onClick={() => setIsAddModalOpen(true)}
                 className={cn(
-                  "flex flex-col items-center justify-center rounded-2xl bg-zinc-50/50 dark:bg-zinc-900/30 border-2 border-dashed border-zinc-200/70 dark:border-zinc-800/70 h-[100px] md:h-[130px] hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all group opacity-50 hover:opacity-100",
+                  "flex flex-col items-center justify-center rounded-2xl bg-zinc-50/50 dark:bg-zinc-900/30 border-2 border-dashed border-zinc-200/70 dark:border-zinc-800/70 p-3 md:p-4 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all group opacity-50 hover:opacity-100",
                   activeId && "scale-95 transition-transform duration-200"
                 )}
                 aria-label="Add new source"
