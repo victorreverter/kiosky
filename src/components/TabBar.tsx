@@ -231,20 +231,18 @@ export function TabBar({
           );
         })}
 
-        {isEditMode && (
-          <button
-            onClick={onAddTab}
-            className={cn(
-              "flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-full border-2 border-dashed border-zinc-300 dark:border-zinc-700",
-              "hover:border-zinc-400 dark:hover:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
-            )}
-            aria-label="Add new tab"
-            type="button"
-          >
-            <Plus size={18} className="text-zinc-400" />
-            <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Add Tab</span>
-          </button>
-        )}
+        <button
+          onClick={onAddTab}
+          className={cn(
+            "flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-full opacity-40 hover:opacity-100 border-2 border-dashed border-zinc-200 dark:border-zinc-800",
+            "hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all"
+          )}
+          aria-label="Add new tab"
+          type="button"
+        >
+          <Plus size={18} className="text-zinc-300 dark:text-zinc-600" />
+          <span className="text-sm font-medium text-zinc-400 dark:text-zinc-500">Add Tab</span>
+        </button>
       </div>
     </div>
   );

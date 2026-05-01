@@ -393,15 +393,15 @@ function App() {
           <button
             onClick={() => setIsEditMode(!isEditMode)}
             className={cn(
-              "flex items-center gap-2 px-5 py-3 rounded-full font-medium transition-all shadow-sm hover:shadow-md",
+              "p-3 rounded-full shadow-sm hover:shadow-md transition-all",
               isEditMode 
                 ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800" 
-                : "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                : "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800"
             )}
+            aria-label={isEditMode ? "Exit edit mode" : "Enter edit mode"}
             type="button"
           >
-            <Settings2 size={20} className={cn(isEditMode && "animate-spin-slow")} />
-            {isEditMode ? "Done Editing" : "Edit Mode"}
+            <Settings2 size={20} />
           </button>
         </div>
       </header>
@@ -430,7 +430,7 @@ function App() {
             <div>
               <h3 className="font-semibold text-amber-800 dark:text-amber-500">Edit Mode Active</h3>
               <p className="text-sm text-amber-700 dark:text-amber-600/90">
-                You can now remove sources or add new ones. Changes are saved automatically.
+                You can now edit or remove sources. Changes are saved automatically.
               </p>
             </div>
           </div>
@@ -572,25 +572,23 @@ function App() {
                 )}
               </DragOverlay>
               
-              {isEditMode && (
-                <button
-                  onClick={() => setIsAddModalOpen(true)}
-                  className={cn(
-                    "flex flex-col items-center justify-center rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border-2 border-dashed border-zinc-200 dark:border-zinc-800 h-[100px] md:h-[130px] hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors group",
-                    activeId && "scale-95 transition-transform duration-200"
-                  )}
-                  aria-label="Add new source"
-                  type="button"
-                  role="listitem"
-                >
-                  <div className="w-9 h-9 md:w-11 md:h-11 mb-2 flex items-center justify-center rounded-lg bg-zinc-200/50 dark:bg-zinc-800 text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors">
-                    <Plus size={18} />
-                  </div>
-                  <span className="text-xs md:text-sm font-medium text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200">
-                    Add Source
-                  </span>
-                </button>
-              )}
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                className={cn(
+                  "flex flex-col items-center justify-center rounded-2xl bg-zinc-50/50 dark:bg-zinc-900/30 border-2 border-dashed border-zinc-200/70 dark:border-zinc-800/70 h-[100px] md:h-[130px] hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all group opacity-50 hover:opacity-100",
+                  activeId && "scale-95 transition-transform duration-200"
+                )}
+                aria-label="Add new source"
+                type="button"
+                role="listitem"
+              >
+                <div className="w-9 h-9 md:w-11 md:h-11 mb-2 flex items-center justify-center rounded-lg bg-zinc-200/30 dark:bg-zinc-800/50 text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors">
+                  <Plus size={18} />
+                </div>
+                <span className="text-xs md:text-sm font-medium text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-600 dark:group-hover:text-zinc-300">
+                  Add Source
+                </span>
+              </button>
             </div>
           </DndContext>
         )}
