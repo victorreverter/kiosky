@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from "react";
-import { X, AlertCircle } from "lucide-react";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { X, AlertCircle, Search } from "lucide-react";
 import { cn } from "../lib/utils";
 import { FLAG_ICONS, CATEGORY_ICONS } from "../constants/icons";
 import type { TabGroup, TabColor } from "../types";
@@ -69,8 +69,21 @@ export function EditTabModal({ onClose, onUpdate, existingTabs, editTab }: EditT
   const [selectedIcon, setSelectedIcon] = useState(editTab.icon);
   const [nameError, setNameError] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<'flags' | 'categories'>('flags');
+  const [iconSearch, setIconSearch] = useState("");
   const modalRef = useRef<HTMLDivElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
+
+  const filteredFlags = useMemo(() => {
+    const query = iconSearch.toLowerCase().trim();
+    if (!query) return FLAG_ICONS;
+    return FLAG_ICONS.filter(f => f.label.toLowerCase().includes(query) || f.icon.includes(query));
+  }, [iconSearch]);
+
+  const filteredCategories = useMemo(() => {
+    const query = iconSearch.toLowerCase().trim();
+    if (!query) return CATEGORY_ICONS;
+    return CATEGORY_ICONS.filter(c => c.label.toLowerCase().includes(query));
+  }, [iconSearch]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -242,7 +255,7 @@ export function EditTabModal({ onClose, onUpdate, existingTabs, editTab }: EditT
             <div className="flex gap-2 mb-3">
               <button
                 type="button"
-                onClick={() => setActiveSection('flags')}
+                onClick={() => { setActiveSection('flags'); setIconSearch(""); }}
                 className={cn(
                   "px-3 py-1.5 text-sm font-medium rounded-lg transition-colors",
                   activeSection === 'flags'
@@ -254,7 +267,7 @@ export function EditTabModal({ onClose, onUpdate, existingTabs, editTab }: EditT
               </button>
               <button
                 type="button"
-                onClick={() => setActiveSection('categories')}
+                onClick={() => { setActiveSection('categories'); setIconSearch(""); }}
                 className={cn(
                   "px-3 py-1.5 text-sm font-medium rounded-lg transition-colors",
                   activeSection === 'categories'
@@ -266,8 +279,19 @@ export function EditTabModal({ onClose, onUpdate, existingTabs, editTab }: EditT
               </button>
             </div>
 
+            <div className="relative mb-2">
+              <Search className="absolute left-3 top-2.5 text-zinc-400" size={14} />
+              <input
+                type="text"
+                value={iconSearch}
+                onChange={(e) => setIconSearch(e.target.value)}
+                placeholder={activeSection === 'flags' ? "Search flags..." : "Search categories..."}
+                className="w-full pl-9 pr-3 py-2 text-sm rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:text-zinc-100"
+              />
+            </div>
+
             <div className="grid grid-cols-8 gap-2 max-h-40 overflow-y-auto p-2 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800">
-              {(activeSection === 'flags' ? FLAG_ICONS : CATEGORY_ICONS).map(({ icon, label }) => (
+              {(activeSection === 'flags' ? filteredFlags : filteredCategories).map(({ icon, label }) => (
                 <button
                   key={icon}
                   type="button"
