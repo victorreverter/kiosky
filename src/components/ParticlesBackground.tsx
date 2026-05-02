@@ -55,7 +55,18 @@ export function ParticlesBackground() {
     const handleMouse = (e: MouseEvent) => {
       mouseRef.current = { x: e.clientX, y: e.clientY };
     };
+
+    const handleMouseLeave = () => {
+      mouseRef.current = { x: -500, y: -500 };
+      for (const p of particlesRef.current) {
+        p.strength = 0;
+        p.x = p.baseX;
+        p.y = p.baseY;
+      }
+    };
+
     window.addEventListener("mousemove", handleMouse);
+    document.addEventListener("mouseleave", handleMouseLeave);
 
     const draw = () => {
       if (canvas.height < document.body.scrollHeight) {
@@ -101,6 +112,7 @@ export function ParticlesBackground() {
     return () => {
       cancelAnimationFrame(animRef.current);
       window.removeEventListener("mousemove", handleMouse);
+      document.removeEventListener("mouseleave", handleMouseLeave);
       window.removeEventListener("resize", resize);
     };
   }, [initParticles]);
