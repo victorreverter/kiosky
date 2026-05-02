@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from "react";
-import { DndContext, DragOverlay, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { DndContext, DragOverlay, rectIntersection, KeyboardSensor, PointerSensor, useSensor, useSensors, DragStartEvent, DragEndEvent } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { Plus, Settings2, Moon, Sun, Monitor, ShieldAlert, Search, X, Newspaper, Globe, Zap, FileUp } from "lucide-react";
 import { useLocalStorage } from "./hooks/useLocalStorage";
@@ -38,6 +38,8 @@ function ModalLoadingSpinner() {
   );
 }
 
+const TAB_DROP_PREFIX = "tab-drop-";
+
 function App() {
   const { 
     storedValue: sources, 
@@ -67,7 +69,8 @@ function App() {
   const [isImportExportModalOpen, setIsImportExportModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTabId, setActiveTabId] = useState<string>("all");
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const [overTabId, setOverTabId] = useState<string | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   
   useEffect(() => {
@@ -215,35 +218,53 @@ function App() {
     searchInputRef.current?.focus();
   }, []);
 
-  const handleDragEnd = useCallback((event: { active: { id: string | number }; over: { id: string | number } | null }) => {
-    const { active, over } = event;
-    
-    if (over && active.id !== over.id) {
-      setSources((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id);
-        const newIndex = items.findIndex((item) => item.id === over.id);
-        
-        if (oldIndex === -1 || newIndex === -1) {
-          return items;
-        }
-        
-        const newItems = [...items];
-        const removed = newItems.splice(oldIndex, 1)[0];
-        if (!removed) {
-          return items;
-        }
-        newItems.splice(newIndex, 0, removed);
-        
-        return newItems;
-      });
-    }
-    
-    setActiveId(null);
-  }, [setSources]);
-
-  const handleDragStart = useCallback((event: { active: { id: string | number } }) => {
-    setActiveId(String(event.active.id));
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    setActiveDragId(String(event.active.id));
   }, []);
+
+  const handleDragOver = useCallback((event: { active: { id: string | number }; over: { id: string | number } | null }) => {
+    const { over } = event;
+    if (over) {
+      const id = String(over.id);
+      if (id.startsWith(TAB_DROP_PREFIX)) {
+        const tabId = id.slice(TAB_DROP_PREFIX.length);
+        setOverTabId(tabId === "all" ? "" : tabId);
+        return;
+      }
+    }
+    setOverTabId(null);
+  }, []);
+
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over) {
+      const overId = String(over.id);
+      if (overId.startsWith(TAB_DROP_PREFIX)) {
+        const tabId = overId.slice(TAB_DROP_PREFIX.length);
+        const newTabId = tabId === "all" ? "" : tabId;
+        setSources((items) =>
+          items.map((s) => (s.id === String(active.id) ? { ...s, tabId: newTabId } : s))
+        );
+      } else if (active.id !== over.id) {
+        setSources((items) => {
+          const oldIndex = items.findIndex((item) => item.id === active.id);
+          const newIndex = items.findIndex((item) => item.id === over.id);
+
+          if (oldIndex === -1 || newIndex === -1) return items;
+
+          const newItems = [...items];
+          const removed = newItems.splice(oldIndex, 1)[0];
+          if (!removed) return items;
+          newItems.splice(newIndex, 0, removed);
+          return newItems;
+        });
+      }
+    }
+
+    setActiveDragId(null);
+    setOverTabId(null);
+  }, [setSources]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -292,6 +313,8 @@ function App() {
     return result;
   }, [sources, activeTabId, searchQuery]);
 
+  const activeSource = activeDragId ? sources.find(s => s.id === activeDragId) ?? null : null;
+
   return (
     <>
       <ParticlesBackground />
@@ -334,231 +357,251 @@ function App() {
           </div>
         </div>
       ) : (
-        <>
-        <header className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-6">
-          <img
-            key={getEffectiveTheme()}
-            src={getEffectiveTheme() === "dark" ? "./Kiosky_Logo_Dark.png" : "./Kiosky_Logo_Light.png"}
-            alt="Kiosky"
-            className="h-16 md:h-20 w-auto object-contain"
-          />
-        
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <input
-              ref={searchInputRef}
-              type="search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search sources..."
-              className="w-48 px-4 py-2 pl-10 rounded-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:text-zinc-100 text-sm"
-              aria-label="Search sources"
+        <DndContext
+          sensors={sensors}
+          collisionDetection={rectIntersection}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
+        >
+          <header className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-6">
+            <img
+              key={getEffectiveTheme()}
+              src={getEffectiveTheme() === "dark" ? "./Kiosky_Logo_Dark.png" : "./Kiosky_Logo_Light.png"}
+              alt="Kiosky"
+              className="h-16 md:h-20 w-auto object-contain"
             />
-            <Search className="absolute left-3 top-2.5 text-zinc-400" size={16} />
-            {searchQuery && (
-              <button
-                onClick={handleClearSearch}
-                className="absolute right-3 top-2.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
-                aria-label="Clear search"
-                type="button"
-              >
-                <X size={16} />
-              </button>
-            )}
-          </div>
           
-          <button
-            onClick={toggleTheme}
-            className="p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-full shadow-sm hover:shadow-md hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all text-zinc-600 dark:text-zinc-300"
-            aria-label={`Toggle theme (current: ${theme})`}
-            type="button"
-          >
-            {THEME_ICONS[theme]}
-          </button>
-          
-          <button
-            onClick={() => setIsImportExportModalOpen(true)}
-            className="p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-full shadow-sm hover:shadow-md hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all text-zinc-600 dark:text-zinc-300"
-            aria-label="Import or export sources"
-            type="button"
-          >
-            <FileUp size={20} />
-          </button>
-          
-          <button
-            onClick={() => setIsEditMode(!isEditMode)}
-            className={cn(
-              "p-3 rounded-full shadow-sm hover:shadow-md transition-all",
-              isEditMode 
-                ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800" 
-                : "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800"
-            )}
-            aria-label={isEditMode ? "Exit edit mode" : "Enter edit mode"}
-            type="button"
-          >
-            <Settings2 size={20} />
-          </button>
-        </div>
-      </header>
-
-      <Suspense fallback={<ModalLoadingSpinner />}>
-        <TabBar
-          tabGroups={tabGroups}
-          sources={sources}
-          activeTabId={activeTabId}
-          onTabChange={setActiveTabId}
-          onAddTab={() => setIsAddTabModalOpen(true)}
-          onEditTab={(tab) => setEditingTab(tab)}
-          onDeleteTab={handleDeleteTab}
-          isEditMode={isEditMode}
-        />
-      </Suspense>
-
-      <main>
-        {isEditMode && (
-          <div 
-            className="mb-8 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 flex items-start gap-3"
-            role="status"
-            aria-live="polite"
-          >
-            <ShieldAlert className="text-amber-600 dark:text-amber-500 mt-0.5 shrink-0" size={20} />
-            <div>
-              <h3 className="font-semibold text-amber-800 dark:text-amber-500">Edit Mode Active</h3>
-              <p className="text-sm text-amber-700 dark:text-amber-600/90">
-                You can now edit or remove sources. Changes are saved automatically.
-              </p>
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <input
+                ref={searchInputRef}
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search sources..."
+                className="w-48 px-4 py-2 pl-10 rounded-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:text-zinc-100 text-sm"
+                aria-label="Search sources"
+              />
+              <Search className="absolute left-3 top-2.5 text-zinc-400" size={16} />
+              {searchQuery && (
+                <button
+                  onClick={handleClearSearch}
+                  className="absolute right-3 top-2.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                  aria-label="Clear search"
+                  type="button"
+                >
+                  <X size={16} />
+                </button>
+              )}
             </div>
-          </div>
-        )}
-
-        <div className="mb-4 text-sm text-zinc-500 dark:text-zinc-400" role="status" aria-live="polite">
-          {filteredSources.length} of {sources.length} sources
-          {searchQuery && ` matching "${searchQuery}"`}
-        </div>
-
-        {filteredSources.length === 0 && searchQuery ? (
-          <div className="text-center py-20 bg-white dark:bg-zinc-900/50 rounded-3xl border border-dashed border-zinc-300 dark:border-zinc-800">
-            <p className="text-zinc-500 dark:text-zinc-400 mb-2">
-              No sources found matching "{searchQuery}"
-            </p>
+            
             <button
-              onClick={handleClearSearch}
-              className="text-blue-600 dark:text-blue-400 font-medium hover:underline"
+              onClick={toggleTheme}
+              className="p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-full shadow-sm hover:shadow-md hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all text-zinc-600 dark:text-zinc-300"
+              aria-label={`Toggle theme (current: ${theme})`}
               type="button"
             >
-              Clear search
+              {THEME_ICONS[theme]}
+            </button>
+            
+            <button
+              onClick={() => setIsImportExportModalOpen(true)}
+              className="p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-full shadow-sm hover:shadow-md hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all text-zinc-600 dark:text-zinc-300"
+              aria-label="Import or export sources"
+              type="button"
+            >
+              <FileUp size={20} />
+            </button>
+            
+            <button
+              onClick={() => setIsEditMode(!isEditMode)}
+              className={cn(
+                "p-3 rounded-full shadow-sm hover:shadow-md transition-all",
+                isEditMode 
+                  ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800" 
+                  : "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+              )}
+              aria-label={isEditMode ? "Exit edit mode" : "Enter edit mode"}
+              type="button"
+            >
+              <Settings2 size={20} />
             </button>
           </div>
-        ) : sources.length === 0 && !isEditMode ? (
-          <div className="text-center py-16 bg-white dark:bg-zinc-900/50 rounded-3xl border border-dashed border-zinc-300 dark:border-zinc-800">
-            <div className="mb-6 flex justify-center gap-4">
-              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl">
-                <Newspaper className="text-blue-600 dark:text-blue-400" size={48} />
-              </div>
-              <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-2xl">
-                <Globe className="text-purple-600 dark:text-purple-400" size={48} />
-              </div>
-              <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-2xl">
-                <Zap className="text-orange-600 dark:text-orange-400" size={48} />
+        </header>
+
+        <Suspense fallback={<ModalLoadingSpinner />}>
+          <TabBar
+            tabGroups={tabGroups}
+            sources={sources}
+            activeTabId={activeTabId}
+            onTabChange={setActiveTabId}
+            onAddTab={() => setIsAddTabModalOpen(true)}
+            onEditTab={(tab) => setEditingTab(tab)}
+            onDeleteTab={handleDeleteTab}
+            isEditMode={isEditMode}
+            overTabId={overTabId}
+          />
+        </Suspense>
+
+        <main>
+          {isEditMode && (
+            <div 
+              className="mb-8 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 flex items-start gap-3"
+              role="status"
+              aria-live="polite"
+            >
+              <ShieldAlert className="text-amber-600 dark:text-amber-500 mt-0.5 shrink-0" size={20} />
+              <div>
+                <h3 className="font-semibold text-amber-800 dark:text-amber-500">Edit Mode Active</h3>
+                <p className="text-sm text-amber-700 dark:text-amber-600/90">
+                  You can now edit, move or remove sources. Drag cards onto tabs to reassign them. Changes are saved automatically.
+                </p>
               </div>
             </div>
-            
-            <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">
-              Welcome to Your Personal Newsstand
-            </h2>
-            <p className="text-zinc-500 dark:text-zinc-400 mb-6 max-w-md mx-auto">
-              Kiosky helps you organize and access your favorite websites in one beautiful place. 
-              Start by adding your first source.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
+          )}
+
+          <div className="mb-4 text-sm text-zinc-500 dark:text-zinc-400" role="status" aria-live="polite">
+            {filteredSources.length} of {sources.length} sources
+            {searchQuery && ` matching "${searchQuery}"`}
+          </div>
+
+          {filteredSources.length === 0 && searchQuery ? (
+            <div className="text-center py-20 bg-white dark:bg-zinc-900/50 rounded-3xl border border-dashed border-zinc-300 dark:border-zinc-800">
+              <p className="text-zinc-500 dark:text-zinc-400 mb-2">
+                No sources found matching "{searchQuery}"
+              </p>
               <button
-                onClick={() => setIsEditMode(true)}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-full transition-colors shadow-lg hover:shadow-xl flex items-center gap-2"
+                onClick={handleClearSearch}
+                className="text-blue-600 dark:text-blue-400 font-medium hover:underline"
                 type="button"
               >
-                <Plus size={20} />
-                Add Your First Source
+                Clear search
               </button>
             </div>
-            
-            <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6">
-              <p className="text-sm text-zinc-400 dark:text-zinc-500 mb-3">Popular sources to get started:</p>
-              <div className="flex flex-wrap justify-center gap-2">
+          ) : sources.length === 0 && !isEditMode ? (
+            <div className="text-center py-16 bg-white dark:bg-zinc-900/50 rounded-3xl border border-dashed border-zinc-300 dark:border-zinc-800">
+              <div className="mb-6 flex justify-center gap-4">
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl">
+                  <Newspaper className="text-blue-600 dark:text-blue-400" size={48} />
+                </div>
+                <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-2xl">
+                  <Globe className="text-purple-600 dark:text-purple-400" size={48} />
+                </div>
+                <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-2xl">
+                  <Zap className="text-orange-600 dark:text-orange-400" size={48} />
+                </div>
+              </div>
+              
+              <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">
+                Welcome to Your Personal Newsstand
+              </h2>
+              <p className="text-zinc-500 dark:text-zinc-400 mb-6 max-w-md mx-auto">
+                Kiosky helps you organize and access your favorite websites in one beautiful place. 
+                Start by adding your first source.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
                 <button
-                  onClick={() => {
-                    setIsEditMode(true);
-                    setIsAddModalOpen(true);
-                  }}
-                  className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-sm rounded-full transition-colors"
+                  onClick={() => setIsEditMode(true)}
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-full transition-colors shadow-lg hover:shadow-xl flex items-center gap-2"
                   type="button"
                 >
-                  📰 News
-                </button>
-                <button
-                  onClick={() => {
-                    setIsEditMode(true);
-                    setIsAddModalOpen(true);
-                  }}
-                  className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-sm rounded-full transition-colors"
-                  type="button"
-                >
-                  💻 Tech
-                </button>
-                <button
-                  onClick={() => {
-                    setIsEditMode(true);
-                    setIsAddModalOpen(true);
-                  }}
-                  className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-sm rounded-full transition-colors"
-                  type="button"
-                >
-                  🎮 Entertainment
-                </button>
-                <button
-                  onClick={() => {
-                    setIsEditMode(true);
-                    setIsAddModalOpen(true);
-                  }}
-                  className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-sm rounded-full transition-colors"
-                  type="button"
-                >
-                  📺 YouTube
+                  <Plus size={20} />
+                  Add Your First Source
                 </button>
               </div>
-            </div>
-          </div>
-        ) : (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-          >
-            <div 
-              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6" 
-              role="list"
-              aria-label="News sources"
-            >
-              {filteredSources.map((source) => (
-                <ComponentErrorBoundary
-                  key={source.id}
-                  name={`KioskCard: ${source.name}`}
-                >
-                  <SortableKioskCard
-                    source={source}
-                    isEditMode={isEditMode}
-                    onDelete={handleDeleteSource}
-                    onEdit={handleEditSource}
-                  />
-                </ComponentErrorBoundary>
-              ))}
               
+              <div className="border-t border-zinc-200 dark:border-zinc-800 pt-6">
+                <p className="text-sm text-zinc-400 dark:text-zinc-500 mb-3">Popular sources to get started:</p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  <button
+                    onClick={() => {
+                      setIsEditMode(true);
+                      setIsAddModalOpen(true);
+                    }}
+                    className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-sm rounded-full transition-colors"
+                    type="button"
+                  >
+                    📰 News
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsEditMode(true);
+                      setIsAddModalOpen(true);
+                    }}
+                    className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-sm rounded-full transition-colors"
+                    type="button"
+                  >
+                    💻 Tech
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsEditMode(true);
+                      setIsAddModalOpen(true);
+                    }}
+                    className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-sm rounded-full transition-colors"
+                    type="button"
+                  >
+                    🎮 Entertainment
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsEditMode(true);
+                      setIsAddModalOpen(true);
+                    }}
+                    className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-sm rounded-full transition-colors"
+                    type="button"
+                  >
+                    📺 YouTube
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div 
+                className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6" 
+                role="list"
+                aria-label="News sources"
+              >
+                {filteredSources.map((source) => (
+                  <ComponentErrorBoundary
+                    key={source.id}
+                    name={`KioskCard: ${source.name}`}
+                  >
+                    <SortableKioskCard
+                      source={source}
+                      isEditMode={isEditMode}
+                      onDelete={handleDeleteSource}
+                      onEdit={handleEditSource}
+                    />
+                  </ComponentErrorBoundary>
+                ))}
+                <button
+                  onClick={() => setIsAddModalOpen(true)}
+                  className={cn(
+                    "flex flex-col items-center justify-center rounded-2xl bg-amber-50/40 dark:bg-amber-900/10 border-2 border-dashed border-amber-300/40 dark:border-amber-700/30 p-3 md:p-4 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:border-amber-300 dark:hover:border-amber-700/50 transition-all group opacity-70 hover:opacity-100 cursor-pointer",
+                    activeDragId && "scale-95 transition-transform duration-200"
+                  )}
+                  aria-label="Add new source"
+                  type="button"
+                  role="listitem"
+                >
+                  <div className="w-9 h-9 md:w-11 md:h-11 mb-2 flex items-center justify-center rounded-lg bg-amber-200/30 dark:bg-amber-800/20 text-amber-400 group-hover:text-amber-500 dark:group-hover:text-amber-300 transition-colors">
+                    <Plus size={18} />
+                  </div>
+                  <span className="text-xs md:text-sm font-medium text-amber-500 dark:text-amber-400 group-hover:text-amber-600 dark:group-hover:text-amber-300">
+                    Add Source
+                  </span>
+                </button>
+              </div>
+
               <DragOverlay>
-                {activeId && (
+                {activeSource && (
                   <div className="scale-105 rotate-2 shadow-2xl">
                     <SortableKioskCard
-                      source={sources.find(s => s.id === activeId)!}
+                      source={activeSource}
                       isEditMode={isEditMode}
                       onDelete={handleDeleteSource}
                       onEdit={handleEditSource}
@@ -566,28 +609,11 @@ function App() {
                   </div>
                 )}
               </DragOverlay>
-              
-              <button
-                onClick={() => setIsAddModalOpen(true)}
-                className={cn(
-                  "flex flex-col items-center justify-center rounded-2xl bg-zinc-50/50 dark:bg-zinc-900/30 border-2 border-dashed border-zinc-200/70 dark:border-zinc-800/70 p-3 md:p-4 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all group opacity-50 hover:opacity-100",
-                  activeId && "scale-95 transition-transform duration-200"
-                )}
-                aria-label="Add new source"
-                type="button"
-                role="listitem"
-              >
-                <div className="w-9 h-9 md:w-11 md:h-11 mb-2 flex items-center justify-center rounded-lg bg-zinc-200/30 dark:bg-zinc-800/50 text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors">
-                  <Plus size={18} />
-                </div>
-                <span className="text-xs md:text-sm font-medium text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-600 dark:group-hover:text-zinc-300">
-                  Add Source
-                </span>
-              </button>
-            </div>
-          </DndContext>
-        )}
-      </main>
+            </>
+          )}
+        </main>
+        </DndContext>
+      )}
 
       {isAddModalOpen && (
         <Suspense fallback={<ModalLoadingSpinner />}>
@@ -654,11 +680,9 @@ function App() {
           </ComponentErrorBoundary>
         </Suspense>
       )}
-      </>
-    )}
-  </div>
-  </>
-);
+    </div>
+    </>
+  );
 }
 
 export default App;

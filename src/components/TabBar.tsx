@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Plus, Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { useDroppable } from "@dnd-kit/core";
 import type { TabGroup, Source, TabColor } from "../types";
 import { cn } from "../lib/utils";
 
@@ -12,6 +13,97 @@ interface TabBarProps {
   onEditTab: (tab: TabGroup) => void;
   onDeleteTab: (tabId: string) => void;
   isEditMode: boolean;
+  overTabId?: string | null;
+}
+
+function DroppableTab({
+  tab,
+  isActive,
+  count,
+  colorStyle,
+  isEditMode,
+  isOver,
+  onTabChange,
+  onEditTab,
+  onDeleteTab,
+}: {
+  tab: { id: string; name: string; icon: string; color: TabColor; isDefault?: boolean };
+  isActive: boolean;
+  count: number;
+  colorStyle: ReturnType<typeof getColorStyle>;
+  isEditMode: boolean;
+  isOver: boolean;
+  onTabChange: (tabId: string) => void;
+  onEditTab: (tab: TabGroup) => void;
+  onDeleteTab: (tabId: string) => void;
+}) {
+  const { setNodeRef } = useDroppable({ id: `tab-drop-${tab.id}` });
+
+  return (
+    <div
+      ref={isEditMode ? setNodeRef : undefined}
+      className={cn(
+        "flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-full border-2 transition-all cursor-pointer group",
+        isActive
+          ? `${colorStyle.border} ${colorStyle.light} shadow-sm`
+          : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800",
+        isOver && "border-[#ee6254] bg-amber-50/60 dark:bg-amber-900/20 shadow-md"
+      )}
+      onClick={() => onTabChange(tab.id)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onTabChange(tab.id);
+        }
+      }}
+      role="tab"
+      aria-selected={isActive}
+      tabIndex={0}
+    >
+      <span className="text-lg">{tab.icon}</span>
+      <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200 whitespace-nowrap">
+        {tab.name}
+      </span>
+      <span
+        className={cn(
+          "flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-xs font-semibold",
+          isActive ? colorStyle.bg + " text-white" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+        )}
+      >
+        {count}
+      </span>
+
+      {isEditMode && !tab.isDefault && tab.id !== "all" && (
+        <div className="flex items-center gap-1 ml-1 pl-1 border-l border-zinc-200 dark:border-zinc-700">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onEditTab(tab as TabGroup);
+            }}
+            className={cn(
+              "p-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors",
+              colorStyle.text
+            )}
+            aria-label={`Edit ${tab.name} tab`}
+            type="button"
+          >
+            <Pencil size={14} />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDeleteTab(tab.id);
+            }}
+            className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-colors"
+            aria-label={`Delete ${tab.name} tab`}
+            type="button"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 const TAB_COLORS = {
@@ -20,51 +112,48 @@ const TAB_COLORS = {
     border: "border-blue-500",
     light: "bg-blue-50 dark:bg-blue-900/20",
     text: "text-blue-600 dark:text-blue-400",
-    hover: "hover:bg-blue-100 dark:hover:bg-blue-900/30",
   },
   green: {
     bg: "bg-green-500",
     border: "border-green-500",
     light: "bg-green-50 dark:bg-green-900/20",
     text: "text-green-600 dark:text-green-400",
-    hover: "hover:bg-green-100 dark:hover:bg-green-900/30",
   },
   purple: {
     bg: "bg-purple-500",
     border: "border-purple-500",
     light: "bg-purple-50 dark:bg-purple-900/20",
     text: "text-purple-600 dark:text-purple-400",
-    hover: "hover:bg-purple-100 dark:hover:bg-purple-900/30",
   },
   red: {
     bg: "bg-red-500",
     border: "border-red-500",
     light: "bg-red-50 dark:bg-red-900/20",
     text: "text-red-600 dark:text-red-400",
-    hover: "hover:bg-red-100 dark:hover:bg-red-900/30",
   },
   orange: {
     bg: "bg-orange-500",
     border: "border-orange-500",
     light: "bg-orange-50 dark:bg-orange-900/20",
     text: "text-orange-600 dark:text-orange-400",
-    hover: "hover:bg-orange-100 dark:hover:bg-orange-900/30",
   },
   pink: {
     bg: "bg-pink-500",
     border: "border-pink-500",
     light: "bg-pink-50 dark:bg-pink-900/20",
     text: "text-pink-600 dark:text-pink-400",
-    hover: "hover:bg-pink-100 dark:hover:bg-pink-900/30",
   },
   gray: {
     bg: "bg-gray-500",
     border: "border-gray-500",
     light: "bg-gray-50 dark:bg-gray-900/20",
     text: "text-gray-600 dark:text-gray-400",
-    hover: "hover:bg-gray-100 dark:hover:bg-gray-900/30",
   },
 };
+
+function getColorStyle(color: TabColor) {
+  return TAB_COLORS[color as keyof typeof TAB_COLORS];
+}
 
 const ALL_TAB = {
   id: "all",
@@ -83,6 +172,7 @@ export function TabBar({
   onEditTab,
   onDeleteTab,
   isEditMode,
+  overTabId,
 }: TabBarProps) {
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
@@ -106,8 +196,8 @@ export function TabBar({
     if (!container) return;
 
     const scrollAmount = 200;
-    const newScrollLeft = direction === "left" 
-      ? container.scrollLeft - scrollAmount 
+    const newScrollLeft = direction === "left"
+      ? container.scrollLeft - scrollAmount
       : container.scrollLeft + scrollAmount;
 
     container.scrollTo({
@@ -125,13 +215,6 @@ export function TabBar({
 
     return () => container.removeEventListener("scroll", handleScroll);
   }, [handleScroll]);
-
-  const handleKeyDown = useCallback((e: React.KeyboardEvent, tabId: string) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      onTabChange(tabId);
-    }
-  }, [onTabChange]);
 
   const allTabs = [ALL_TAB, ...tabGroups];
 
@@ -168,80 +251,35 @@ export function TabBar({
         {allTabs.map((tab) => {
           const isActive = activeTabId === tab.id;
           const count = tab.id === "all" ? sources.length : getSourceCount(tab.id);
-          const colorStyle = TAB_COLORS[tab.color as keyof typeof TAB_COLORS];
+          const colorStyle = getColorStyle(tab.color as TabColor);
 
           return (
-            <div
+            <DroppableTab
               key={tab.id}
-              className={cn(
-                "flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-full border-2 transition-all cursor-pointer group",
-                isActive
-                  ? `${colorStyle.border} ${colorStyle.light} shadow-sm`
-                  : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800"
-              )}
-              onClick={() => onTabChange(tab.id)}
-              onKeyDown={(e) => handleKeyDown(e, tab.id)}
-              role="tab"
-              aria-selected={isActive}
-              tabIndex={0}
-            >
-              <span className="text-lg">{tab.icon}</span>
-              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200 whitespace-nowrap">
-                {tab.name}
-              </span>
-              <span
-                className={cn(
-                  "flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-xs font-semibold",
-                  isActive ? colorStyle.bg + " text-white" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
-                )}
-              >
-                {count}
-              </span>
-
-              {isEditMode && !tab.isDefault && tab.id !== "all" && (
-                <div className="flex items-center gap-1 ml-1 pl-1 border-l border-zinc-200 dark:border-zinc-700">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEditTab(tab as TabGroup);
-                    }}
-                    className={cn(
-                      "p-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors",
-                      colorStyle.text
-                    )}
-                    aria-label={`Edit ${tab.name} tab`}
-                    type="button"
-                  >
-                    <Pencil size={14} />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeleteTab(tab.id);
-                    }}
-                    className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-colors"
-                    aria-label={`Delete ${tab.name} tab`}
-                    type="button"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              )}
-            </div>
+              tab={tab as { id: string; name: string; icon: string; color: TabColor; isDefault?: boolean }}
+              isActive={isActive}
+              count={count}
+              colorStyle={colorStyle}
+              isEditMode={isEditMode}
+              isOver={overTabId === tab.id}
+              onTabChange={onTabChange}
+              onEditTab={onEditTab}
+              onDeleteTab={onDeleteTab}
+            />
           );
         })}
 
         <button
           onClick={onAddTab}
           className={cn(
-            "flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-full opacity-40 hover:opacity-100 border-2 border-dashed border-zinc-200 dark:border-zinc-800",
-            "hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all"
+            "flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-full border-2 border-dashed border-amber-300/50 dark:border-amber-700/40",
+            "bg-amber-50/40 dark:bg-amber-900/10 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:border-amber-300 dark:hover:border-amber-700/60 transition-all opacity-70 hover:opacity-100 cursor-pointer"
           )}
           aria-label="Add new tab"
           type="button"
         >
-          <Plus size={18} className="text-zinc-300 dark:text-zinc-600" />
-          <span className="text-sm font-medium text-zinc-400 dark:text-zinc-500">Add Tab</span>
+          <Plus size={18} className="text-amber-500 dark:text-amber-400" />
+          <span className="text-sm font-medium text-amber-600 dark:text-amber-400">Add Tab</span>
         </button>
       </div>
     </div>

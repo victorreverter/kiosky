@@ -2,11 +2,6 @@ import { memo, useCallback, useState, useEffect, useMemo } from "react";
 import { ExternalLink, Trash2, Edit2, Loader2 } from "lucide-react";
 import type { Source } from "../types";
 import { cn, getFaviconUrl, isValidHttpUrl } from "../lib/utils";
-// ==============================================================
-// KioskCard Component
-// ==============================================================
-// A card component for displaying a source with its favicon, name, and edit/delete actions.
-// Supports responsive design and keyboard navigation.  
 
 interface KioskCardProps {
   source: Source;
@@ -41,7 +36,7 @@ export const KioskCard = memo(function KioskCard({ source, isEditMode, onDelete,
 
   useEffect(() => {
     const mediaQueries = BREAKPOINTS.map(bp => window.matchMedia(bp.query));
-    
+
     const handleChange = () => {
       setCurrentColumns(getCurrentColumns());
     };
@@ -54,12 +49,12 @@ export const KioskCard = memo(function KioskCard({ source, isEditMode, onDelete,
 
   const handleClick = useCallback(() => {
     if (isEditMode) return;
-    
+
     if (!isValidHttpUrl(source.url)) {
       alert("This source has an invalid URL and cannot be opened.");
       return;
     }
-    
+
     window.open(source.url, "_blank", "noopener,noreferrer");
   }, [isEditMode, source.url]);
 
@@ -72,15 +67,15 @@ export const KioskCard = memo(function KioskCard({ source, isEditMode, onDelete,
 
   const handleGridNavigation = useCallback((e: React.KeyboardEvent) => {
     if (isEditMode) return;
-    
+
     const grid = e.currentTarget.parentElement;
     if (!grid) return;
-    
+
     const cards = Array.from(grid.querySelectorAll('[role="link"]'));
     const currentIndex = cards.indexOf(e.currentTarget);
-    
+
     let nextIndex: number | null = null;
-    
+
     switch (e.key) {
       case "ArrowRight":
         nextIndex = (currentIndex + 1) % cards.length;
@@ -97,19 +92,19 @@ export const KioskCard = memo(function KioskCard({ source, isEditMode, onDelete,
         if (nextIndex < 0) nextIndex = Math.max(0, cards.length - 1);
         break;
     }
-    
+
     if (nextIndex !== null && nextIndex !== currentIndex) {
       e.preventDefault();
       const nextCard = cards[nextIndex] as HTMLElement;
       nextCard?.focus();
     }
   }, [isEditMode, currentColumns]);
-  
+
   return (
     <div
       className={cn(
-        "group relative flex flex-col items-center justify-center rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-3 md:p-4 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden",
-        isEditMode ? "animate-pulse-subtle" : "cursor-pointer"
+        "group relative flex flex-col items-center justify-center rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-3 md:p-4 shadow-sm hover:shadow-md transition-all duration-300",
+        isEditMode ? "animate-pulse-subtle overflow-visible" : "cursor-pointer overflow-hidden"
       )}
       onClick={handleClick}
       onKeyDown={(e) => {
@@ -129,7 +124,7 @@ export const KioskCard = memo(function KioskCard({ source, isEditMode, onDelete,
               e.stopPropagation();
               onEdit?.(source);
             }}
-            className="absolute top-2 right-10 p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors z-10"
+            className="absolute top-2 left-2 p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors z-10 cursor-pointer"
             aria-label={`Edit ${source.name}`}
             type="button"
           >
@@ -140,7 +135,7 @@ export const KioskCard = memo(function KioskCard({ source, isEditMode, onDelete,
               e.stopPropagation();
               onDelete(source.id);
             }}
-            className="absolute top-2 right-2 p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors z-10"
+            className="absolute top-2 right-2 p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors z-10 cursor-pointer"
             aria-label={`Delete ${source.name}`}
             type="button"
           >
