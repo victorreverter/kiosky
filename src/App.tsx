@@ -8,6 +8,7 @@ import { SortableKioskCard } from "./components/SortableKioskCard";
 import { ComponentErrorBoundary } from "./components/ComponentErrorBoundary";
 import { cn, isValidHttpUrl } from "./lib/utils";
 import { TabBar } from "./components/TabBar";
+import { ParticlesBackground } from "./components/ParticlesBackground";
 
 const AddSourceModal = lazy(() => import("./components/AddSourceModal").then(module => ({ default: module.AddSourceModal })));
 const ImportExportModal = lazy(() => import("./components/ImportExportModal").then(module => ({ default: module.ImportExportModal })));
@@ -292,7 +293,9 @@ function App() {
   }, [sources, activeTabId, searchQuery]);
 
   return (
-    <div className="min-h-screen bg-transparent p-6 md:p-12 lg:p-24 max-w-6xl mx-auto">
+    <>
+      <ParticlesBackground />
+      <div className="min-h-screen bg-transparent p-6 md:p-12 lg:p-24 max-w-6xl mx-auto relative z-10">
       {(sourcesError || themeError) && (
         <div 
           className="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 flex items-start justify-between gap-3"
@@ -654,6 +657,7 @@ function App() {
       </>
     )}
   </div>
+  </>
 );
 }
 

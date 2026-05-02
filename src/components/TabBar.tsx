@@ -70,7 +70,7 @@ const ALL_TAB = {
   id: "all",
   name: "All Sources",
   icon: "📰",
-  color: "blue" as TabColor,
+  color: "orange" as TabColor,
   isDefault: true,
 };
 
