@@ -59,7 +59,7 @@ function App() {
     setValue: setTheme,
     error: themeError,
     clearError: clearThemeError 
-  } = useLocalStorage<"light" | "dark" | "system">("theme", "system");
+  } = useLocalStorage<"light" | "dark" | "system">("theme", "light");
   
   const [isEditMode, setIsEditMode] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
