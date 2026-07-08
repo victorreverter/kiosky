@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from "react";
 import { DndContext, DragOverlay, rectIntersection, KeyboardSensor, PointerSensor, useSensor, useSensors, DragStartEvent, DragEndEvent } from "@dnd-kit/core";
-import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import { sortableKeyboardCoordinates, arrayMove } from "@dnd-kit/sortable";
 import { Plus, Settings2, Moon, Sun, Monitor, ShieldAlert, Search, X, Newspaper, Globe, Zap, FileUp } from "lucide-react";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import type { Source, TabGroup } from "./types";
@@ -70,6 +70,7 @@ function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTabId, setActiveTabId] = useState<string>("all");
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const [activeTabDragId, setActiveTabDragId] = useState<string | null>(null);
   const [overTabId, setOverTabId] = useState<string | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   
@@ -219,8 +220,15 @@ function App() {
   }, []);
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
-    setActiveDragId(String(event.active.id));
-  }, []);
+    const activeId = String(event.active.id);
+    const isTabDrag = tabGroups.some(t => t.id === activeId);
+
+    if (isTabDrag) {
+      setActiveTabDragId(activeId);
+    } else {
+      setActiveDragId(activeId);
+    }
+  }, [tabGroups]);
 
   const handleDragOver = useCallback((event: { active: { id: string | number }; over: { id: string | number } | null }) => {
     const { over } = event;
@@ -240,7 +248,19 @@ function App() {
 
     if (over) {
       const overId = String(over.id);
-      if (overId.startsWith(TAB_DROP_PREFIX)) {
+
+      const isTabDrag = tabGroups.some(t => t.id === String(active.id));
+      if (isTabDrag) {
+        const activeId = String(active.id);
+        if (activeId !== overId && activeId !== "all" && overId !== "all") {
+          setTabGroups((items) => {
+            const oldIndex = items.findIndex(t => t.id === activeId);
+            const newIndex = items.findIndex(t => t.id === overId);
+            if (oldIndex === -1 || newIndex === -1) return items;
+            return arrayMove(items, oldIndex, newIndex);
+          });
+        }
+      } else if (overId.startsWith(TAB_DROP_PREFIX)) {
         const tabId = overId.slice(TAB_DROP_PREFIX.length);
         const newTabId = tabId === "all" ? "" : tabId;
         setSources((items) =>
@@ -263,8 +283,9 @@ function App() {
     }
 
     setActiveDragId(null);
+    setActiveTabDragId(null);
     setOverTabId(null);
-  }, [setSources]);
+  }, [setSources, setTabGroups, tabGroups]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -314,6 +335,7 @@ function App() {
   }, [sources, activeTabId, searchQuery]);
 
   const activeSource = activeDragId ? sources.find(s => s.id === activeDragId) ?? null : null;
+  const activeTab = activeTabDragId ? tabGroups.find(t => t.id === activeTabDragId) ?? null : null;
 
   return (
     <>
@@ -606,6 +628,14 @@ function App() {
                       onDelete={handleDeleteSource}
                       onEdit={handleEditSource}
                     />
+                  </div>
+                )}
+                {activeTab && (
+                  <div className="scale-105 shadow-2xl bg-white dark:bg-zinc-900 border-2 border-[#ee6254] rounded-full px-4 py-2.5 flex items-center gap-2">
+                    <span className="text-lg">{activeTab.icon}</span>
+                    <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200 whitespace-nowrap">
+                      {activeTab.name}
+                    </span>
                   </div>
                 )}
               </DragOverlay>

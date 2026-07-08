@@ -1,6 +1,8 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Plus, Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { useDroppable } from "@dnd-kit/core";
+import { useSortable, SortableContext, horizontalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import type { TabGroup, Source, TabColor } from "../types";
 import { cn } from "../lib/utils";
 
@@ -102,6 +104,121 @@ function DroppableTab({
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+function SortableDroppableTab({
+  tab,
+  isActive,
+  count,
+  colorStyle,
+  isEditMode,
+  isOver,
+  onTabChange,
+  onEditTab,
+  onDeleteTab,
+}: {
+  tab: { id: string; name: string; icon: string; color: TabColor; isDefault?: boolean };
+  isActive: boolean;
+  count: number;
+  colorStyle: ReturnType<typeof getColorStyle>;
+  isEditMode: boolean;
+  isOver: boolean;
+  onTabChange: (tabId: string) => void;
+  onEditTab: (tab: TabGroup) => void;
+  onDeleteTab: (tabId: string) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setSortableRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: tab.id });
+
+  const { setNodeRef: setDroppableRef } = useDroppable({ id: `tab-drop-${tab.id}` });
+
+  const mergedRef = useCallback(
+    (node: HTMLElement | null) => {
+      setSortableRef(node);
+      setDroppableRef(node);
+    },
+    [setSortableRef, setDroppableRef]
+  );
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.3 : 1,
+  };
+
+  return (
+    <div ref={mergedRef} style={style}>
+      <div
+        className={cn(
+          "flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-full border-2 transition-all cursor-pointer group",
+          isActive
+            ? `${colorStyle.border} ${colorStyle.light} shadow-sm`
+            : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800",
+          isOver && "border-[#ee6254] bg-amber-50/60 dark:bg-amber-900/20 shadow-md",
+          isDragging && "shadow-lg border-[#ee6254]"
+        )}
+        onClick={() => onTabChange(tab.id)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onTabChange(tab.id);
+          }
+        }}
+        aria-selected={isActive}
+        {...attributes}
+        {...listeners}
+      >
+        <span className="text-lg">{tab.icon}</span>
+        <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200 whitespace-nowrap">
+          {tab.name}
+        </span>
+        <span
+          className={cn(
+            "flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-xs font-semibold",
+            isActive ? colorStyle.bg + " text-white" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+          )}
+        >
+          {count}
+        </span>
+
+        {isEditMode && !tab.isDefault && tab.id !== "all" && (
+          <div className="flex items-center gap-1 ml-1 pl-1 border-l border-zinc-200 dark:border-zinc-700">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEditTab(tab as TabGroup);
+              }}
+              className={cn(
+                "p-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors",
+                colorStyle.text
+              )}
+              aria-label={`Edit ${tab.name} tab`}
+              type="button"
+            >
+              <Pencil size={14} />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteTab(tab.id);
+              }}
+              className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-colors"
+              aria-label={`Delete ${tab.name} tab`}
+              type="button"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -217,6 +334,7 @@ export function TabBar({
   }, [handleScroll]);
 
   const allTabs = [ALL_TAB, ...tabGroups];
+  const sortableTabIds = tabGroups.map(t => t.id);
 
   return (
     <div className="relative mb-8">
@@ -248,26 +366,46 @@ export function TabBar({
         role="tablist"
         aria-label="Source categories"
       >
-        {allTabs.map((tab) => {
-          const isActive = activeTabId === tab.id;
-          const count = tab.id === "all" ? sources.length : getSourceCount(tab.id);
-          const colorStyle = getColorStyle(tab.color as TabColor);
+        <SortableContext items={sortableTabIds} strategy={horizontalListSortingStrategy}>
+          {allTabs.map((tab) => {
+            const isActive = activeTabId === tab.id;
+            const count = tab.id === "all" ? sources.length : getSourceCount(tab.id);
+            const colorStyle = getColorStyle(tab.color as TabColor);
+            const isDefault = tab.id === "all";
 
-          return (
-            <DroppableTab
-              key={tab.id}
-              tab={tab as { id: string; name: string; icon: string; color: TabColor; isDefault?: boolean }}
-              isActive={isActive}
-              count={count}
-              colorStyle={colorStyle}
-              isEditMode={isEditMode}
-              isOver={overTabId === tab.id}
-              onTabChange={onTabChange}
-              onEditTab={onEditTab}
-              onDeleteTab={onDeleteTab}
-            />
-          );
-        })}
+            if (isDefault) {
+              return (
+                <DroppableTab
+                  key={tab.id}
+                  tab={tab as { id: string; name: string; icon: string; color: TabColor; isDefault?: boolean }}
+                  isActive={isActive}
+                  count={count}
+                  colorStyle={colorStyle}
+                  isEditMode={isEditMode}
+                  isOver={overTabId === tab.id}
+                  onTabChange={onTabChange}
+                  onEditTab={onEditTab}
+                  onDeleteTab={onDeleteTab}
+                />
+              );
+            }
+
+            return (
+              <SortableDroppableTab
+                key={tab.id}
+                tab={tab as { id: string; name: string; icon: string; color: TabColor; isDefault?: boolean }}
+                isActive={isActive}
+                count={count}
+                colorStyle={colorStyle}
+                isEditMode={isEditMode}
+                isOver={overTabId === tab.id}
+                onTabChange={onTabChange}
+                onEditTab={onEditTab}
+                onDeleteTab={onDeleteTab}
+              />
+            );
+          })}
+        </SortableContext>
 
         <button
           onClick={onAddTab}
