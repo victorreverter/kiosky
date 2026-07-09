@@ -12,6 +12,32 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,json}'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        navigateFallback: '/kiosky/offline.html',
+        navigateFallbackDenylist: [/^\/api\//, /^\/assets\//],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/www\.google\.com\/s2\/favicons/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-favicons',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 30 * 24 * 60 * 60,
+              },
+            },
+          },
+          {
+            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'image-cache',
+              expiration: {
+                maxEntries: 200,
+                maxAgeSeconds: 7 * 24 * 60 * 60,
+              },
+            },
+          },
+        ],
       },
       devOptions: {
         enabled: true,

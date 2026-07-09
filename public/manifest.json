@@ -2,12 +2,15 @@
   "name": "Kiosky",
   "short_name": "Kiosky",
   "description": "Your personal newsstand — organize and access your favorite websites in one beautiful place.",
+  "id": "/kiosky/",
   "start_url": "/kiosky/",
+  "scope": "/kiosky/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#fafafa",
   "theme_color": "#ee6254",
   "orientation": "portrait",
-  "scope": "/kiosky/",
+  "categories": ["news", "productivity"],
   "icons": [
     {
       "src": "pwa-192x192.svg",
@@ -16,9 +19,21 @@
       "purpose": "any maskable"
     },
     {
+      "src": "pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
       "src": "pwa-512x512.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]
